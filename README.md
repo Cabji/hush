@@ -1,0 +1,2 @@
+# hush
+hush development
