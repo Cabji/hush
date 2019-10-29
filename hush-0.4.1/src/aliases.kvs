@@ -1,0 +1,560 @@
+alias(xdcc::doNextAutoDownload)
+{
+	if (%G_hushOptions{"NoiseNone"}) {%speak = $false;} else {%speak = $true;}
+	
+	if (%G_hushOptions{"TransfersAutoToggle"})
+	{
+		if (%G_hush->%debug) {debug -c "===== Start of Auto Download Batch Loop =====";}
+		if (%G_hushLive{"iTransfersActive"} < %G_hushOptions{"TransfersMaxTransfers"})
+		{
+	
+	if (%speak) {%G_hush->$doFCW(); echo -w=$window(%G_hushOptions{"FCW"}) "===== Start of Auto Download Batch Loop =====";}
+	# the for loop below will will start as many auto download as possible, up to the maximum allowed auto downloads in user settings
+			for (%auto = %G_hushLive{"iTransfersActive"}; %auto < %G_hushOptions{"TransfersMaxTransfers"}; %auto++)
+			{
+			# build the active search terms array because transfer status just changed
+			%G_hush->$buildActiveSearchTermArray();
+			%activeST = $false
+			if ($typeOf(%G_hush->%activeSearchTerms) == array) {%activeST = %G_hush->%activeSearchTerms;}
+	/*
+	 dev-note: this is a do ... while loop. the loop will continue if: 
+	 xdccobject's attempts are <= Max allowed number of retries OR
+	 xdccobject's searchTerm is not found in %activeSearchTerms (array of searchTerms in downloadHash that have an object with active status) OR
+	 xdccobject's ircContext is not found
+	 important: checkDownloadQueue does a check to make sure a file hasn't run out of retries so it will only return objects that are 
+	            still valid for downloading or retrying
+	*/
+				do {
+					%nextDL = %G_hush->$checkDownloadQueue(%activeST);
+					if (%nextDL)
+					{
+						if (%G_hush->%debug) {debug -c hush::main::checkDownloadQueue returned this value to us: %nextDL;}
+						%nextDL = $str.split(|||,%nextDL,2)
+						if ($isSet(%nextDL[1]))
+						{
+							%botName = %G_hushDownloadHash{"%nextDL[0]"}[%nextDL[1]]->$getInfo(botName)
+							%ircContext = %G_hushDownloadHash{"%nextDL[0]"}[%nextDL[1]]->$getInfo(ircContext)
+							%networkName = %G_hushDownloadHash{"%nextDL[0]"}[%nextDL[1]]->$getInfo(networkName)
+							%packName = %G_hushDownloadHash{"%nextDL[0]"}[%nextDL[1]]->$getInfo(packName)
+							%packNum = %G_hushDownloadHash{"%nextDL[0]"}[%nextDL[1]]->$getInfo(packNum)
+							%packGets = %G_hushDownloadHash{"%nextDL[0]"}[%nextDL[1]]->$getInfo(packGets)
+							%packSize = %G_hushDownloadHash{"%nextDL[0]"}[%nextDL[1]]->$getInfo(packSize)
+							%searchTerm = %G_hushDownloadHash{"%nextDL[0]"}[%nextDL[1]]->$getInfo(searchTerm)
+							%ss = %G_hushDownloadHash{"%nextDL[0]"}[%nextDL[1]]->$getInfo(sendStyle)
+	
+							if (%G_hushDownloadHash{"%nextDL[0]"}[%nextDL[1]]->$getInfo(attempts) > %G_hushOptions{"TransfersMaxRetries"})
+							{
+								if (%G_hush->%debug) {debug -c Setting reference %nextDL[0]|||%nextDL[1] status to 'Failed';}
+								%G_hushDownloadHash{"%nextDL[0]"}[%nextDL[1]]->$setInfo(status,Failed)
+							}
+							if (!%G_hushOptions{"TransfersRetryToggle"})
+							{
+								# dev-note: this is a dodgy hack way of handling when the user doesn't want to retry 
+								# failed transfers. we are setting the xdccobject's attempts to equal the maximum 
+								# number of retries. i should probably think of a better way to handle this.
+								%G_hushDownloadHash{"%nextDL[0]"}[%nextDL[1]]->$setInfo(attempts,%G_hushOptions{"TransfersMaxRetries"})
+								%oneShot = $true
+								break;
+							}
+						}
+						else
+						{
+							debug -c xdccobject at '%nextDL[0]|||%nextDL[1]' $k(7)didn't have an index value$k. Please check the data or submit this as a bug.;
+						}
+	# dev-note: this call to xdcc::hilightsClick has a $true appended to the end of the params ($10 in hilightsClick)
+	# it signifies that the download is an auto download
+						# check that we have access to this network
+						if (%G_hush->%ircContexts{"%networkName"})
+						{
+							# check that we have an ircContext value
+							if (%ircContext)
+							{
+								xdcc::hilightsClick %ircContext %G_hushOptions{"FCW"} %ss %botName %packName %packNum %packGets %packSize %nextDL[0] %nextDL[1] $true
+								break;
+							}
+							else
+							{
+								if (%G_hush->%debug) {debug -c $k(7)No IRC context$k was returned for xdccobject at '%nextDL[0]|||%nextDL[1]' so removing this download candidate. (Can't request download with out an IRC context value);}
+								%G_hushDownloadHash{"%nextDL[0]"}[%nextDL[1]]->$setInfo(status,ircContext Missing)
+						}	
+						}
+						else
+						{
+							if (%G_hush->%debug) {debug -c $k(7)No networkName$k was returned for xdccobject at '%nextDL[0]|||%nextDL[1]' so removing this download candidate. (Can't verify if this network is available without it);}
+							%G_hushDownloadHash{"%nextDL[0]"}[%nextDL[1]]->$setInfo(status,IRC Network Unavailable)
+						}
+					}
+					else
+					{
+						if (%G_hush->%debug) {debug -c $k(7)No suitable files Queued$k for automatic download. (checkDownloadQueue returned false);}
+						if (%speak) {%G_hush->$doFCW(); echo -w=$window(%G_hushOptions{"FCW"}) All files in local download queue processed. Finished downloading for now.;}
+						if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) ===== End of Auto Download Batch Loop =====;}
+						halt;
+					}
+				} 
+				while (!$str.grep(%G_hushDownloadHash{"%nextDL[0]"}[%nextDL[1]]->$getInfo(searchTerm),%activeSearchTerms) || !%G_hushDownloadHash{"%nextDL[0]"}[%nextDL[1]]->$getInfo(ircContext))
+				if (%oneShot)
+				{
+					xdcc::hilightsClick %ircContext %G_hushOptions{"FCW"} %ss %botName %packName %packNum %packGets %packSize %nextDL[0] %nextDL[1] $true
+				}
+			}
+	if (%speak) {%G_hush->$doFCW; echo -w=$window(%G_hushOptions{"FCW"}) ===== End of Auto Download Batch Loop =====;}
+	if (%G_hush->%debug) {debug -c ===== End of Auto Download Batch Loop =====;}
+		}
+		else
+		{
+			if (%G_hush->%debug) {debug -c $k(7)Maximum number of transfers$k already going: %G_hushOptions{"TransfersMaxTransfers"} transfers;}
+		}
+	}
+	else
+	{
+		if (%G_hush->%debug) {debug -c $k(7)Automatic downloads are switched off$k. Check Settings.;}
+	}
+}
+
+
+alias(xdcc::extractArchive)
+{
+	# this alias is a placeholder.
+	
+	/* old code from events::onDCCFileTransferSuccess
+	
+	
+	
+	
+	
+	
+			### extract file if autoExtract true and it is a .tar
+			if ($str.rightfromlast(%o1->$getInfo(filename),.) == tar || $str.rightfromlast(%o1->$getInfo(filename),.) == rar)
+			{
+				debug -c the file downloaded is a tar or rar extension;
+				if (%G_hushOptions{"TransfersAutoExtract"} == $true)
+				{
+					debug -c Hush is set to do automatic archive extractions...;
+					%fileType = tar
+	### this code should actualy be ran when the MediaIncoming value is set in options. for now, we will have it in here as media library isnt ready yet.
+					# we need to check if 7z.exe is available
+					if ($file.exists($file.localdir(config/Hush/utils/7z.exe)))
+					{
+						debug -c 7z.exe is available
+						
+					}
+					else
+					{
+						debug -c 7z.exe is not available. Can't do file extraction.;
+						halt;
+					}
+				}
+				else
+				{
+					debug -c Hush is not set to auto extract files. See Options -> Transfers -> Automatically extract archives (tick this option);
+				}
+			}
+			else
+			{
+				debug -c File is not a TAR or RAR archive.;
+			}
+	
+	
+	
+	
+	
+	
+	} # end if exists
+	
+	if ($system.osname == "Linux")
+	{
+		%tar = tar
+	}
+	
+	*/
+}
+
+
+alias(xdcc::hilightsClick)
+{
+	/*
+	$0 = ircContext (not networkName but irc context for msg use)
+	$1 = hilight window name (FCW)
+	$2 = sendStyle
+	$3 = botName
+	$4 = packName
+	$5 = packNum
+	$6 = packGets
+	$7 = packSize
+	$8 = searchTerm (passes when the transfer is an auto download)
+	$9 = index value of entry in G_hushDownloadHash{searchTerm}
+	$10 = boolean (signifies an automated download if true)
+	*/
+	
+	rebind $console($0); # rebind output to console window of the irc network for ircContext
+	
+	%botName = $3
+	%sendStyle = $2
+	%speak = $(!%G_hushOptions{"NoiseNone"});
+	
+	# user cancelled this send, so find the xdcc object and set status to user cancelled.
+	if (%sendStyle == "CANCEL")
+	{
+		msg $3 xdcc %sendStyle
+		if (%speak) {%G_hush->$doFCW(); rebind $window($1); echo $k(7)Cancelling Request$k() for $k(7)$4$k() from $k(12)$3$k();}
+		%st = %G_hushDownloadHash{"$8"}[$9]->getInfo(status);
+		if (!$str.contains(%st,"Cancelled"))
+		{
+			%G_hushDownloadHash{"$8"}[$9]->$setInfo(status,"User Cancelled")
+		}
+		%G_hushLive{"iTransfersActive"}--;
+		if (%G_hushLive{"iTransfersActive"} < 0) {%G_hushLive{"iTransfersActive"} = 0;}
+		if (%G_hushOptions{"TransfersAutoToggle"}) {xdcc::doNextAutoDownload;}
+		%G_hush->%queueeditor->$refreshItem(%G_hushDownloadHash{"$8"}[$9]->$getInfo(downloadQNum),$8,$9)
+		halt;
+	}
+	
+	if (%sendStyle == "UNSUPPORTED")
+	{
+		%status = %G_hushDownloadHash{"$8"}[$9]->$getInfo(status);
+		if (%status)
+		{
+			if ($str.contains(%status,"Cancelled") == $false)
+			{
+				%G_hushDownloadHash{"$8"}[$9]->$setInfo(status,"Cancelled (Unsupported Command**)")
+			}
+		}
+		else
+		{
+			if (%G_hush->%debug) {debug -c the previous oops came from this alias.;}
+		}
+		%G_hushLive{"iTransfersActive"}--;
+		if (%G_hushLive{"iTransfersActive"} < 0) {%G_hushLive{"iTransfersActive"} = 0;}
+		if (%G_hushOptions{"TransfersAutoToggle"}) {xdcc::doNextAutoDownload;}
+		%G_hush->%queueeditor->$refreshItem(%G_hushDownloadHash{"$8"}[$9]->$getInfo(downloadQNum),$8,$9)
+		halt;
+	}
+	
+	# dev note: REMOVE is used to remove your request from a bot's queue system.
+	# i dont think we can do this because when we get informed about being in a remote queue, we dont have the data to identify which
+	# xdccobject is involved, so we can't update the status of the xdccobject if we remove the request.
+	if (%sendStyle == "REMOVE")
+	{
+		# set pack to user cancelled in the hush xdcc objects array
+		%G_hushDownloadHash{"$8"}[$9]->$setInfo(status, User Cancelled)
+		msg $3 xdcc %sendStyle
+		if (%speak) {%G_hush->$doFCW(); rebind $window($1); echo $k(7)Request Sent$k() to be removed from $k(12)$3$k()'s queue;}
+		%G_hushLive{"iTransfersActive"}--;
+		if (%G_hushLive{"iTransfersActive"} < 0) {%G_hushLive{"iTransfersActive"} = 0;}
+		if (%G_hushOptions{"TransfersAutoToggle"}) {xdcc::doNextAutoDownload;}
+		%G_hush->%queueeditor->$refreshItem(%G_hushDownloadHash{"$8"}[$9]->$getInfo(downloadQNum),$8,$9)
+		halt;
+	}
+	
+	
+	# by default we will handle this as a SEND or SSEND request
+	if ($str.match(send, %sendStyle) || $str.match(ssend, %sendStyle))
+	{
+		# if the searchTerm and downloadIndex value are empty, create new ones because this is a manual download probably from instant search
+		if ($isEmpty($8) && $isEmpty($9))
+		{
+			# dev-note: st = searchTerm, di = downloadIndex
+			%st = "Manual Download"
+			%di = $length(%G_hushDownloadHash{%st})
+			%G_hushDownloadHash{%st}[%di] = $new(hush::xdccobject,0,$null,$context.NetworkName($0),IRC,$3,$4,$5,$6,$7,Queued,%st,$2,%di)
+		}
+		else
+		{
+			# else this is an auto download, set the searchTerm and downloadIndex values respecitvely from arguments passed here.
+			%st = $8
+			%di = $9
+		}
+		
+		# push this searchTerm into the downloadOrder array
+		if (!$str.grep(%st,%G_hush->%downloadOrder))
+		{
+			%G_hush->%downloadOrder[%G_hush->%downloadOrder[]#] = %st
+		}
+		# set item's category magically
+		%cat = 3
+		if ($str.grep("S[0-9]{1,2}","$4", r) || $str.grep("season.[0-9]{1,2}","$4", r))
+		{%cat = 5; if (%G_hush->%debug) {debug -c found item category as TV Shows;}}
+		elseif ($str.rightfromlast("$4",.) == mkv || $str.rightfromlast("$4",.) == mp4 || $str.rightfromlast("$4",.) == avi)
+		{%cat = 1; if (%G_hush->%debug) {debug -c found item category as Movies;}}
+		elseif ($str.rightfromlast("$4",.) == pdf || $str.rightfromlast("$4",.) == txt || $str.contains("$4",\.EPUB) || $str.contains("$4",eBook))
+		{%cat = 0; if (%G_hush->%debug) {debug -c found item category as eBooks;}}
+		elseif ($str.rightfromlast("$4",.) == exe || $str.rightfromlast("$4",.) == zip || $str.rightfromlast("$4",.) == msi || $str.rightfromlast("$4",.) == bin || $str.rightfromlast("$4",.) == iso)
+		{%cat = 4; if (%G_hush->%debug) {debug -c found item category as Software;}}
+		elseif ($str.rightfromlast("$4",.) == mp3 || $str.rightfromlast("$4",.) == flac || $str.contains("$4",[MP3) || $str.contains("$4",.MP3) || $str.contains("$4",[FLAC]) || $str.contains("$4","(FLAC)")  || $str.contains("$4",-FLAC-))
+		{%cat = 2; if (%G_hush->%debug) {debug -c found item category as Music;}}
+		else
+		{%cat = 3; if (%G_hush->%debug) {debug -c found item category as Other;}}
+	
+		%G_hushDownloadHash{%st}[%di]->%info{"mediaCategory"}->$setCurrentItem(%cat)
+	
+		# grab the pack's guessed category name for output
+		%catName = %G_hushDownloadHash{%st}[%di]->%info{"mediaCategory"}->$textAt(%G_hushDownloadHash{%st}[%di]->%info{"mediaCategory"}->$currentItem())
+		
+		%G_hushDownloadHash{%st}[%di]->$setInfo(attempts,$(%G_hushDownloadHash{%st}[%di]->$getInfo(attempts) + 1))
+		%G_hushDownloadHash{%st}[%di]->$setInfo(autoDownload, $10)
+		%G_hushDownloadHash{%st}[%di]->$setInfo(dhIDNum,%di)
+		%G_hushDownloadHash{%st}[%di]->$setInfo(packgets, $6)
+		%G_hushDownloadHash{%st}[%di]->$setInfo(packnum, $5)
+		%G_hushDownloadHash{%st}[%di]->$setInfo(packsize, $7)
+		%G_hushDownloadHash{%st}[%di]->$setInfo(sendStyle, %sendStyle)
+		%G_hushDownloadHash{%st}[%di]->$setInfo(status, Requested)
+	
+		# check if this bot is in the botsNoSSL array, switch sendType to SEND if it is
+		if (%G_hush->%common->$fnArrayBinarySearch(%botName,%G_hush->%arrayBotsNoSSL,value) == $true)
+		{
+			# this bot does not support SSL transfers, so use non SSL if the user allows it via options, else abort this request
+			if (%G_hushOptions{"TransfersNoSSLOK"})
+			{
+				# change send style to non-SSL
+				%sendStyle = SEND
+			}
+			else
+			{
+				# abort this request
+				%G_hushDownloadHash{%st}[%di]->$setInfo(status,"Cancelled (No SSL)")
+				if (%G_hushOptions{"TransfersAutoToggle"}) {xdcc::doNextAutoDownload;}
+				%G_hush->%queueeditor->$refreshItem(%G_hushDownloadHash{%st}[%di]->$getInfo(downloadQNum),%st,%di)
+				halt;
+			}
+		}
+	
+		%header = $null
+		%stStr = $null
+		%zncMsg = $null
+		# $10 parameter signifies that this was an automatic download
+		if ($10)
+		{
+			%G_hushLive{"iTransfersActive"}++;
+			%header = "$k(9)Auto Requested Pack$k()"
+			%autoStr = "\[Autos: %G_hushLive{"iTransfersActive"} of %G_hushOptions{"TransfersMaxTransfers"}\]"
+			%stStr = "Matches: $k(8)%st$k()"
+			%zncMsg = "Auto requesting $4 from $3 [%catName]"
+			# dev-note: only increment downloads counter if it is an auto download. manual downloads are not counted.
+		}
+		else
+		{
+			%header = "$k(9)Requested Pack$k()"
+			%autoStr = ""
+			%stStr = "$k(8)%st$k()"
+			%zncMsg = "Requesting $4 from $3 [%catName]"
+		}
+		if (%G_hushDownloadHash{%st}[%di]->$getInfo(attempts) > 1)
+		{
+			%header = "$k(8)Retrying [$(%G_hushDownloadHash{%st}[%di]->$getInfo(attempts) - 1) of %G_hushOptions{"TransfersMaxRetries"}]$k"
+			%zncMsg = "Re-requesting $4 from $3 [%catName]"
+		}
+		if (%G_hushOptions{"ZNCPush"})
+		{
+			msg -q -r=$console($0) *push send %zncMsg
+		}
+	
+		if (%G_hush->%debug) {debug -c %header $4 from $3;}
+		msg $3 xdcc %sendStyle $5
+		if (%speak) {%G_hush->$doFCW(); rebind $window($1); echo %header - $k(12)$4$k() from $k(12)$3$k()\n\[Pack: #$5\]%autoStr\[%stStr\]\[%catName\]\[$cr![!rbt]xdcc::hilightsClick $0 \"%G_hushOptions{"FCW"}\" CANCEL $3 $4 $5 $6 $7 %st %di$cr()$k(10)CANCEL$k()$cr()\];}
+		%G_hush->%queueeditor->$refreshQueue()
+		if ($10) {%G_hush->%queueeditor->$refreshItem(%G_hushDownloadHash{"$8"}[$9]->$getInfo(downloadQNum),$8,$9);}
+	}
+}
+
+
+alias(xdcc::moveToLibrary)
+{
+	# this alias automatically decides where a file should be moved to in the Hush media library
+	# we need to access the xdccobject info of the file we want to process, this will be passed to this alias as
+	# parameters: 
+	# $0 searchTerm - (%G_hushDownloadHash{"searchTerm"})
+	# $1 index - (%G_hushDownloadHash{"searchTerm"}[index])
+	
+	# use %G_hushDownloadHash{"$0"}[$1] to access the xdccobject we are handling
+	
+	if ($isSet(%G_hushDownloadHash{"$0"}[$1]))
+	{
+		%inPath = %G_hushOptions{"mediaIncoming"}
+		%destPath = %G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))
+		%filename = %G_hushDownloadHash{"$0"}[$1]->$getInfo(packName)
+		%incoming = %G_hushOptions{"mediaIncoming"}
+		%fileCategory = %G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory)
+	
+		# archive extraction will only be done if the category is Movies or TV Shows
+		if (%fileCategory == "TV Shows" || %fileCategory == "Movies")
+		{
+	# file is not a tar archive, so if it's a known filetype for its category move it to the library location
+			# get category filetypes from libraryoptions object
+			%filetypes = $str.split(",", %G_hush->%libraryoptions->%libraryFileTypes{"%fileCategory"})
+			%matchedType = $false
+			foreach (%ft, %filetypes)
+			{
+				# check if the extracted file matches a filetype for this category
+				if ($str.rightfromlast(%filename, .) == %ft)
+				{
+					%matchedType = %ft
+					break;
+				}
+			}
+			
+			# the file we got is a video file so no need to extract
+			if (%G_hush->%debug) {debug -c we should be moving the %filename to its place in media collection now... (experimental);}
+			# flow based on fileCategory type
+			if (%matchedType)
+			{
+	/* dev note: this code only allows to act based on media category. a foreseeable problem with this is that media collections can be
+	spread across multiple locations. So we could have more than 1 location for media type Movies for example.
+	The case blocks below should eventually check also if the category has multiple library entries, and detect which location should be
+	used.
+	*/
+				switch (%fileCategory)
+				{
+					case("eBooks")
+					{
+						# process eBook category file
+					}
+					case("Movies")
+					{
+						# movies are easy, its just the movie path from library options and the filename we need to set
+					}
+					case("Music")
+					{
+						# process Music category file
+					}
+					case("Software")
+					{
+						# process Software category file
+					}
+					case("TV Shows")
+					{
+						/* TV Shows we need to identify: 
+							1. The Show Name 
+							2. The season value 
+							3. If a folder exists already for this show name (create if it doesnt)
+							4. If a Season folder exists already for this show name (create if it doesnt)
+							5. Set the %destPath value to include the Show Name/Season NN values
+						*/
+						# split the file name up into a show name and season number
+						%showData = $str.split("E[0-9][0-9]",%filename,r)
+						%showName = $str.lefttolast(%showData[0],.)
+						%showSeason = $str.rightfromlast(%showData[0],.)
+						# change . in show name to space (this should be an option)
+						%showName = $str.replace(%showName,.," ")
+						# change S01 to "Season 01"
+						%showSeason = $str.replace(%showSeason,S,"Season ")
+						%seasonValue = $str.rightfromlast(%showSeason," ")
+						if (%G_hush->%debug) {debug -c We detected this data: \nShow Name: %showName\nShow Season: %showSeason\nSeason Value: %seasonValue;}
+						# now compare the show name against existing show names we have in the tv library
+						%shows = %G_hush->%library->%arr_TVShows
+						# find TV show name in existing Library array, we prefer this value because we know its the name of the folder the tv is held in
+						foreach (%show, %shows)
+						{
+							%match = %showName
+							# ignore "The " at start of show name
+							%match =~ s/^The //im
+							# remove plural 's to widen chance of finding show name
+							%match = $str.replace(%match,"'s","")
+							# replace space with wildcard
+							%match = $str.replace(%match," ","*")
+							if ($str.match(%match,%show,w)) 
+							{
+								if (%G_hush->%debug) {debug -c %show matches %filename;}
+								%showName = %show
+								break;
+							}
+						}
+						# if we still have no show name, something is wrong and we need to abort
+						if (%showName == "") 
+						{
+							if (%G_hush->%debug) {debug -c No show name was detected. Maybe this file has mistakenly been categorized as a TV Show? Here is the data we had: \n\%best = %best\nshowName = %showName\nshowSeason = %showSeason;}
+							halt;
+						}
+						else
+						{
+							if ($file.exists(%G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))/%showName))
+							{
+								%tvDir = $file.ls(%G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))/%showName,dzni)
+							}
+							if (%tvDir)
+							{
+								foreach (%seasonDir, %tvDir)
+								{
+									if ($str.contains(%seasonDir,%seasonValue))
+									{
+										%showSeason = %seasonDir
+									}
+								}
+							}
+							# following code makes tv show and season folders if they dont exist. 
+							# dev note: if these mkdir calls fail the script will halt on the failure (the -e switch does this)
+							if (!$file.exists(%G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))/%showName/%showSeason))
+							{
+								if (!$file.exists(%G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))/%showName))
+								{
+									if (%G_hush->%debug) {debug -c attempting to make Show Name folder: $file.fixpath(%G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))/%showName);}
+									file.mkdir -q $file.fixpath(%G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))/%showName)
+								}
+								if (%G_hush->%debug) {debug -c attempting to make Show Season folder: %file.fixpath(%G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))/%showName/%showSeason);}
+								file.mkdir -q $file.fixpath(%G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))/%showName/%showSeason)
+							}
+							# append %destPath to have TV Show info on the end
+							%destPath .= /%showName/%showSeason
+							if (%G_hush->%debug) {debug -c destPath where TV Show file should be going: %destPath;}
+						} # end else
+					} # end case TV Shows
+				} # end switch
+	# Windows OS Specific code: build a batch file in the incoming directory
+				if ($system.osname == "Windows")
+				{
+					if (%G_hush->%debug) {debug -c the OS is Windows;}
+					# this is all windows specific shit
+					# get the incoming drive letter from the incoming path
+					%inDrive = $str.lefttofirst(%inPath,\\)
+					# get the incoming path for use in windows batch file
+					%inPath = $str.rightfromfirst(%inPath,\\)
+					# get the destination drive for this files category
+					%destDrive = $str.lefttofirst(%destPath,\\)
+					# get the destination path for us in windows batch file
+					%destPath = $str.rightfromfirst(%destPath,\\)
+					# end windows specific shit
+					if (%G_hush->%debug) {debug -c inDrive = %inDrive\ninPath = %inPath\ndestDrive = %destDrive\ndestPath = %destPath\nfilename = %filename\nincoming = %incoming\nfileCategory = %fileCategory;}
+					%batch = "@echo on\r\nset filename=\%1\r\n\r\n%inDrive\r\ncd %inPath\r\nmove /y \"\%filename\%\" \"%inDrive\\$file.fixpath(%destPath)\"\r\n";
+					file.write $file.fixpath(%incoming/hushMove.bat) %batch
+					# we should now have a batch file in the incoming folder, check for its existence
+					if ($file.exists(%incoming/hushMove.bat))
+					{
+						if (%G_hush->%debug) {debug -c hushMove.bat file exists, waiting 10 seconds before attempting to move file (because stupid file locks);}
+						timer --single-shot (hushMoveBatch, 10000, %incoming, %filename)
+						{
+							%incoming = $0
+							%filename = $1
+							exec --trigger-termination ($file.fixpath(%incoming/hushMove.bat) %filename)
+							{
+								if (%G_hush->%debug) {debug -c $0: $1;}
+								if ($0 == terminated)
+								{
+									if (%G_hush->%debug) {debug -c Move process complete. Check if your file is in the correct media library location!;}
+								}
+							}
+						}
+					}
+					else
+					{
+						if (%G_hush->%debug) {debug -c hushExtract.bat file does not exist, extraction not possible.;;}
+					}
+				} # end windows specific
+	# END Windows OS Specific code
+			} # end matchedType
+			else
+			{
+				if (%G_hush->%debug) {debug -c The filetype of %filename is not known by Hush, so we will leave it in the incoming directory (%incoming);}
+			}
+		} # end if fileCategory == Tv Shows || Movies
+		else
+		{
+			if (%G_hush->%debug) {debug -c File category is not TV Show or Movies, fileCategory: %fileCategory;}
+		}
+	}
+	else
+	{
+		if (%G_hush->%debug) {debug -c It seems like the xdccobject at G_hushDownloadHash{"$0"}[$1] doesn't exist, so we're exiting this alias.;}
+	}
+}
+
+

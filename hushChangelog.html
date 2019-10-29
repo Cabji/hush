@@ -1,0 +1,257 @@
+<html>
+<head>
+<title>Hush::Changelog</title>
+</head>
+<body>
+<p>Planned to do (in no particular order): 
+<ul>
+	<li>Complete change of Found Content Window system to use listview object (could be a while off, see how the current system goes)</li>
+	<li>DCC stat tracking to analyze which bots give you the fastest transfers</li>
+	<li>Click and drag to highlight text in KVIrc then select "Add to Hush Searches" from context menu - don't know how to achieve this</li>
+	<li>Library Related</li>
+	<ul>
+		<li>Automated extraction of files from TAR/RAR archives on download completion</li>
+		<li>Add auto extract/move support for Linux systems</li>
+	</ul>
+	<li>Instant Search Related</li>
+	<ul> 
+		<li>Idea: options for when you dont know what to look for, kind of like Google "I'm feeling lucky". Or something to show "hot packs"</li>
+	</ul>
+	<li>Search Acquisition</li>
+	<ul>
+		<li>Check if search title eists in movie library array already to prevent duplicate downloads</li>
+	</ul>
+	<li>Transfer Management</li>
+	<ul>
+		<li>Add a timer that periodically checks the current and/or average speed of active downloads and decides whether or not to terminate them</li>
+		<li>Create option for Hush to ignore DCC file transfers. This will make it possible to request packs from multiple systems [slaves], but have them sent to one particular system [master]. Slaves will ignore DCC file transfers and the master will recieve them all.</li>
+	</ul>
+	<li>UI</li>
+	<ul>
+		<li>Create a widget somewhere for active transfers to see % complete and file category in drop down box</li>
+		<li>Complete UI redo</li>
+		<li>Revisit all the ZNC and FCW messages and possibly construct an option that lets you select which messages you want to see.
+	</ul>
+</ul>
+Known Issues: 
+<ul>
+	<li>Seems to start more transfers than the maximum limit - Many of the conditions that cause this to happen have been addressed but there are so many possibilities that can lead to either too many downloads or the download system stopping incorrectly that the fixes for this are an ongoing bug hunt.</li>
+	<li>If you upgrade Hush, it always seems to throw a red error of some variety saying "The left side of the scope operator evaluated to a null object reference"
+	Pretty sure this is because the main Hush object gets destroyed and the upgrade procedure doesn't create a new Hush object. If you get this happening, just 
+	press Ctrl+Alt+H and it should be fine.</li>
+	<li>KVIrc will "freeze" or got to "Not Responding", mouse inputs are halted etc. when Hush triggers its passive search. This is most noticable if you have a lot of passive searches and I can't find any way to prevent this. You can increase the time between passive searches in Options to reduce how often it occurs.</li>
+</ul>
+</p>
+
+<h2>v0.4.0 - 20191022</h2>
+<p>
+<ul>
+	<li>Bugfix - Fixed bug in Aliases::moveToLibrary that was matching TV Show names incorrectly.</li>
+	<li>Bugfix - Changed %optionsWidget to %options in hush::showOptions.</li>
+	<li>Functions - Alter hush::searchDownloadHashForStatus to accept a hash as second argument, otherwise attempt to default to hushDownloadHash. improved function flow and debug output.</li>
+	<li>Options - Added options to make Hush quiet (no messages output to user). The aim is to offer a silent experience, with Hush running like a server in the background fetching media for you.</li>
+	<li>Options - Added Transfer Priority settings</li>
+	<li>Prioritise Automatic Downloads - added system to collect stats on success rates and speeds that bots send files to you. Hush will automatically select the 'best' bot to request files from when doing 
+	automatic downloads. User can customize how the priority system works by altering settings in Options.</li>
+</ul>
+</p>
+
+<h2>v0.3.6 to v0.3.9</h2>
+<p>
+<ul>
+	<li>The changelog data for these versions is lost.</li>
+</ul>
+</p>
+
+<h2>v0.3.5 - 2018xxxx</h2>
+<p>
+<ul>
+	<li>Instant Search - tried using external sqlite client but makes minimal difference to UI freezes on database write. Up to 1500 announce entries is where UI lag begins. Altered Instant Search settings in Options to make max value 500 entries, 50 step increments for spinbox.</li>
+	<li>Instant Search - changed harvester code to reduce CPU usage. Substantial improvements</li>
+	<li>Instant Search - added zerofilling of packSize and packGets columns so that sorting works correctly</li>
+	<li>Media Library - added code to automatically identify which category a file most likely should be, category is tagged onto the end of particular messages in the FCW</li>
+	<li>Media Library - added code to automatically move video files to appropriate media library folder based on category (tested OK)</li>
+	<li>Media Library - completed Library Options widget. Access via Media Library button on main window.</li>
+	<li>Media Library - scan to find names of movies and TV shows already existing in user's collection</li>
+	<li>Media Library - auto scan of media library on KVIrc startup</li>
+	<li>Options - Bugfix: fixed import and export of settings to file. These weren't working properly.</li>
+	<li>Options - Removed Smart Mode toggle option - if you want to refind items using passive search you should press the Clear Haystack button in Options -&gt; Basic</li>
+	<li>Passive Search - Changed passive search code to use Hush SQLite database and timer to improve performance and lower system load.</li>
+	<li>Passive Search - "Smart mode" (doesn't repeatedly show the same packs) is always employed for passive searching now and passive searching always obeys search exceptions. Instant searching can ignore search exceptions.</li>
+	<li>Passive Search - Conversion of passive searching, automated downloads and automated file move into media library locations (TV and Movies only) code to new "hushDownloadHash" system instead of the old "xdccObs" array system.</li>
+	<li>Searches - Searches list is now sorted alphabetically so it's easier to find a search term.</li>
+	<li>Searches Import - added feature to import passive searches from an external source.</li>
+	<li>Searches Import - added IMDB Advanced Search/List as an external source type</li>
+	<li>Searches Import - added IMDB Calendar as an external source type</li>
+	<li>Searches Import - import compares sourced titles against those found in the media library to prevent finding and auto-downloading content we already have</li>
+	<li>Startup - Bugfix: fixed red error tripped by onDCCTransferSuccess when hush::searches object is not created on KVIrc start up</li>
+	<li>Transfer Management - Additional message when transfers finish (fail or success). Added ZNC Push of transfer complete messages</li>
+	<li>Transfer Management - Attempts to realize when a bot sends an incorrect pack to you. This is currently a crude implementation which will probably block any transfers that aren't initiated by Hush (that can be a good thing though), so needs more work later. (experimental)</li>
+	<li>Transfer Management - Automatic cancel of passive DCC transfers (detected by port 0) option added (experimental))</li>
+	<li>Transfer Management - Automatic increment of TV show episode value in Searches list on successful download</li>
+	<li>Transfer Management - Automatic removal of non-TV episode searches (movies, music, software, files etc.) from Searches list on successful download</li>
+	<li>Transfer Management - Bugfix: adjust conditions for logic flow so auto transfers dont get stuck with queued item waiting</li>
+	<li>Transfer Management - Bugfix: added onDCCSession* event handlers to deal with incoming transfer of a file that already exists and is fully downloaded (tested Good)</li>
+	<li>Transfer Management - Bugfix: added code to create all hush objects when toolbar icon is clicked to prevent red error on DCC transfer success event after code has been modified and rebuilt</li>
+	<li>UI - Added options to toggle new features</li>
+	<li>UI - Added incoming DCC directory setting to Media Library interface</li>
+	<li>UI - General UI tweaks/changes</li>
+</ul>
+</p>
+
+<h2>v0.3.4 - skipped</h2>
+<p>This version was never released.</p>
+
+<h2>v0.3.3 - 20180421</h2>
+<p>
+<ul>
+	<li>Instant Search - fixed Age values to show in local time</li>
+	<li>Instant Search - Added Search Exception obedience to status bar. Small animation in status bar if a search returns 0 results while search exception obedience is on to suggest the user might want to search again with it turned off for broader results.</li>
+	<li>Bugfix - install process creates hush::main object to prevent red error after upgrade of Hush</li>
+	<li>Transfer Management - Handle failed DCC transfers (invoked by Hush only) and decide whether to retry download of file. If user cancels transfer, retries are not done.</li>
+	<li>Transfer Management - Queue requests if maximum number of Hush transfers already happening. Automatically request next queued request when file transfer completes.</li>
+	<li>Transfer Management - Automatically request file when a passive search is found. Deals with filenames that differ but match the search term and decides what to do looking at file transfer status. (In testing)</li>
+	<li>UI - Added new Options tab 'Transfers'. Allows user to configure transfer options.</li>
+</ul>
+</p>
+
+<h2>v0.3.2 - 20180313</h2>
+<p>
+<ul>
+	<li>Added a couple more onQueryNotice handling values for when you get queued for a transfer.</li>
+	<li>Instant Search will obey search exceptions, toggle added in Options</li>
+	<li>Added an instant search query box on the main Hush window so you can instant search from there</li>
+	<li>Instant search query box on main window will disappear/appear depending on the option to disable/enable instant search</li>
+	<li>Bugfixes - Options windget wouldn't open, Instant Search database wouldn't get records saved in it on Windows</li>
+</ul>
+</p>
+
+<h2>v0.3.1 - 20180306</h2>
+<p>
+<ul>
+	<li>Added Instant Search - search for content [very close to] instantly and locally. Transmits nothing to the IRC server when you search, but allows you to find and request content quickly compared to the original passive search.</li>
+	<li>Started Media Library - hidden at the moment but the base elements are there. Probably needs a rewrite already to use database instead.</li>
+	<li>DCC Event Handlers - Adjusted some code in the DCC event handlers for the Instant Search.</li>
+	<li>Added Instant Search Options - tabs now split options into categories.</li>
+	<li>UI tweaks - adjusted the size and properties of some widgets to try to make them display a little better by default.</li>
+</ul>
+</p>
+
+<h2>v0.3.0 - 20170517</h2>
+<p>
+<ul>
+	<li>Added ZNC Push support - you can now have your search matches pushed as a notification to your mobile device (requires ZNC and configured ZNC Push module)</li>
+	<li>Added ZNC *push query window prevention - stops the *push query window from appearing in the channel tree. (Note: this stops it from appearing all the time! If you want to use the *pusy query window, disable the option in Hush Options)</li>
+	<li>Improved search and search exception alteration code - search and search exception changes are applied immediately instead of when the searches window is closed. </li>
+	<li>Added episode value reset button on Searches window - click the reset episode button to set the episode value in highlighted search items back to 01. Useful when a season ticks over.</li>
+</ul>
+</p>
+
+<h2>v0.2.9 (Bourbon Release) - 20170414</h2>
+<p>
+<ul>
+	<li>Debug toggle added - go to Options window and press 4444 to toggle debug mode on and off</li>
+	<li>Make main window slightly bigger vertically (50 pixels) - because Hush works on various platforms, you may want to resize the windows to make them look better.</li>
+	<li>Make Options window slightly bigger vertically (30 pixels)</li>
+	<li>Add season/episode value de/increment buttons on Searches window</li>
+	<li>Changed functions that display Hush child widgets (Channels, Searches, Options windows) so that windows' sizes and positions are remembered</li>
+	<li>Update Help file</li>
+	<li>Hush object is created on KVIrc startup now so you don't need to click the toolbar button to get Hush going in the background after restarting KVIrc</li>
+	<li>Added option to silence watched channels - hides all messages shown in watched channels (most users block these messages)
+	<li>If something doesn't work for this release, it's the bourbon's fault!</li>
+</ul>
+</p>
+
+<h2>v0.2.8 - 20170305</h2>
+<p>
+<ul>
+	<li>Aesthetic UI changes (bolded titles, adjusted tooltips etc.)
+	<li>Prevent Hush from outputting messages if there are no searches or channels in its settings (hopefully)</li>
+	<li>Added search exceptions - prevent false positives appearing in the FCW by setting search exception strings</li>
+	<li>Added Enter/Return key support for channel, search and exception input fields. You can press enter to add your channels etc. now</li>
+	<li>Added Delete &amp; Backspace key support for channel, search and exception list boxes. You can highlight items and press Delete or Backspace key to remove them now.</li>
+	<li>Fixed bug when removing multiple items from channels/searches lists</li>
+	<li>Changed hush::xdccObject to hush::xdccobject - perhaps capitalization is creating the second xdccobject class?</li>
+	<li>Disabled all onQueryNotice handlers (all slots full, bot not online message handling) until the xdccobject system works better</li>
+	<li>Added more debug code</li>
+</ul>
+</p>
+
+<h2>v0.2.7 - 20170219</h2>
+<p>
+<ul>
+	<li>Added handling of "all slots full" from bot on pack request - better user feedback</li>
+	<li>Added handling of "bot is not online" notice - better user feedback</li>
+	<li>Changed minimum required version of KVIrc to 4.9.2 - required for $dcc.currentSpeed() function</li>
+	<li>User prompted option to not remove config file on script uninstall</li>
+	<li>Upgrading script now will preserve existing config file if user chooses to</li>
+	<li>Changed source filenames to default filename on export</li>
+</ul>
+</p>
+
+<h2>v0.2.6 - 20170207</h2>
+<p>
+<ul>
+	<li>Added handling of "invalid pack number" from bot on pack request - better user feedback (only for channels that send invalid pack message)</li>
+	<li>Improved request tracking in case of DCC timeouts, failures etc. User is given feedback about DCC transfers in the FCW.</li>
+</ul>
+</p>
+
+<h2>v0.2.5 - 20170121</h2>
+<p>
+<ul>
+	<li>Fixed icon error generated by onChannelMessage event handler 'hilights'</li>
+	<li>Unset haystack array and close Found Content Window on uninstall</li>
+	<li>Aesthetic improvements of GUI</li>
+	<li>Improve readability in Found Content Window - changed layout, improved hilights code for more flexible layout</li>
+	<li>Use SSL DCC option shows both regular DCC and SSL DCC request link in Found Content window</li>
+</ul>
+</p>
+<h2>v0.2.4 - 20170108</h2>
+<p>
+<ul>
+	<li>Added ability to export your settings to a file on disk (if you want to back up all your settings, move to another machine etc.)</li>
+	<li>Make clear haystack button give some feedback</li>
+	<li>Added ability to load your settings from a file on disk - note that Hush doesn't bother verifying if the file you import is a proper KVC (KVIrc Config) file. If the file is no formatted correctly, the config load function just won't change any settings in Hush.</li>
+	<li>Fixed Linux compatibility issues - fixed toolbar icon not loading, fixed help files not installing</li>
+</ul>
+</p>
+<h2>v0.2.3 - 20161231</h2>
+<p> This version:
+<ul>
+<li>Improved compatibility with KVIrc Addons system</li>
+<ul>
+	<li>About, Help and Change Log buttons do not load an external HTML page via http any more (some users considered this a security risk), moved to local copies and integrated into the KVIrc internal help system (F1 in KVIrc)</li>
+	<li>Added default config file (required for uninstaller)</li>
+</ul>	
+<li>Uninstall of Hush via Settings -> Manage Addons (Ctrl+Shift+N in KVIrc) addon manager will remove entirely all of Hush content and variables from memory. NOTE! If you uninstall Hush, it will remove your config file and you lose all watched channels and search settings.</li>
+</ul>
+</p>
+
+<h2>v0.2.2 - 20161228</h2>
+<p>This was the initial release of Hush.</p>
+<p> This version:
+<ul>
+<li>Added Smart Mode</li>
+<li>Added SSL Send support - static for all channels/networks, needs to recognize which channels support SSLDCC</li>
+<li>Added Clear Haystack button</li>
+</ul>
+</p>
+<!-- Default Statcounter code -->
+<script type="text/javascript">
+        var sc_project=11683541;
+        var sc_invisible=1;
+        var sc_security="264861a6";
+</script>
+<script type="text/javascript" src="https://www.statcounter.com/counter/counter.js" async>
+</script>
+<noscript>
+        <div class="statcounter">
+          <a title="Web Analytics" href="http://statcounter.com/" target="_blank">
+            <img class="statcounter" src="//c.statcounter.com/11683541/0/264861a6/1/" alt="Web Analytics">
+          </a>
+        </div>
+</noscript>
+<!-- End of Statcounter Code -->
+</body>
+</html>

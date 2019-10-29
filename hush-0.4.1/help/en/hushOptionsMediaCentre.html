@@ -1,0 +1,89 @@
+<html>
+<head><title>Hush::Help::Options::Media Centre</title></head>
+<body>
+		<h2>Hush Help::Options::Media Centre</h2>
+		<h3>Media Centre Devices</h3>
+		<p>
+			Hush offers an option to tell your media network devices when new content is added to your <a href="">Library Location</a>. This will make the media centre device scan for, or become aware of new content 
+			as it is downloaded and removes the need for you to manually scan for new content. At time of writing, it supports notifying Kodi device up to Krypton version, and Plex Media Server. 
+		</p>
+		<p>
+			Media Centre Devices will be notified every time new content is moved into its configured Library Location.
+		</p>
+		<p>
+			The <a href="hushOptionsTransfers.html">Automatically move media files to Library location</a> and 
+			<a href="hushOptionsTransfers.html">Automatically update Media Centre devices</a> options must be ticked for 
+			Media Centre Device updates to work.
+		</p>
+		<img src="images/hushOptionsMediaCentreAni.gif" alt="Options Media Centre animated gif"/>
+		<p>The above animation shows how to configure your Media Centre devices.</p>
+		
+		<h4>Media Device Types</h4>
+		<p><i>Media Device Types</i> that are supported are Kodi - up to Krypton version, and Plex Media Server.</p>
+		
+		<h4>Media Centre Devices</h4>
+		<p>
+			The edit box allows you to enter the details for each Media Device that you want notified about new content. Each line represents a single device.
+		</p>
+		
+		<p>
+			The Media Centre Device syntax is as follows:
+			<pre>
+&lt;type|&gt;[user:pass@]&lt;IP Address&gt;[:port][|Plex Token]
+
+&lt; &gt; - denotes that the item is <i>required</i>
+[ ] - denotes that the item is <i>optional</i> or not required for all configurations
+Note: any special characters like : @ | that are shown inside &lt; &gt; and [ ] characters are required
+			</pre>
+		</p>
+		
+		<h5>Syntax Breakdown</h5>
+		<p>
+			<ul>
+				<li><b>type</b> - the media centre device type. Valid values: kodi, plex</li>
+				<li><b>user:pass@</b> - login credentials for the media centre device, if any.</li>
+				<li><b>IP Address</b> - the IP address or hostname of the media centre device.</li>
+				<li><b>:port</b> - the port number the media centre device listens on for remote control access.</li>
+				<li><b>|Plex Token</b> - Plex only! This is the plex authentication token required for remote access to your Plex Media Server. You should not reveal this token to other people! 
+				(Screenshots etc. the one in this documentation is fake) See: <a href="https://support.plex.tv/articles/204059436-finding-an-authentication-token-x-plex-token/">Finding an 
+				authentication token / X-Plex Token</a>, or: 
+				<ol>
+					<li>Open Plex Media Server (opposite click the Plex icon in the taskbar notification area in Windows and select "Open Plex...")</li>
+					<li>Once your Plex Media Server loads in your browser hover the mouse over any media item (TV episode, movie etc.) and click the 3 dots to show the overflow menu</li>
+					<li>Click "Get Info"</li>
+					<li>Click "View XML"</li>
+					<li>In the URL bar of the page that opens, look at the end of the URL to find your Plex Authentication Token. The token is all the characters after the last =. Example: http://127.0.0.1:32400/library/metadata/2311?checkFiles=1&includeExtras=1&includeBandwidths=1&X-Plex-Token=<b>suN6ap8BHWo3cc0ImNtQ</b></li>
+				</ol>
+				</li>
+			</ul>
+		</p>
+		
+		<h5>Examples</h5>
+		<p>
+			You have a Kodi device and its IP address is 192.168.1.50. It is configured to listen for remote control access on port 8080. You have set the username and password for remote control access to 
+			andy and MyPa55W0rD. You would enter the following for the Media Centre Device config line: <br/>
+			<pre>kodi|andy:MyPa55w0rD@192.156.1.50:8080</pre>
+		</p>
+		<p>
+			You have a Plex Media Server running on the same machine as Hush, using the default port for Plex. Your Plex Auth Token is suN6ap8BHWo3cc0ImNtQ. You would enter the following for the 
+			Media Centre Device config line: <br/>
+			<pre>plex|127.0.0.1:32400|suN6ap8BHWo3cc0ImNtQ</pre>
+			Note: you must still provide the port number even if you are using the default port for the server software.<br/>
+			You can access the local machine using the IP address 127.0.0.1
+		</p>
+		
+		<h5>More Info</h5>
+		<p>
+			Blank lines in the edit area are ignored.<br/>
+			Any line that fails to parse using the expected formatting rule will be ignored.<br/>
+			You can configure as many Media Centre Devices as you like, just add one line per device.<br/>
+			Devices can be accessed via Internet as well, as long as the device is accessible via your network you can notify it from anywhere.<br/>
+			Plex devices <i>must</i> have a Plex Authentication Token to work.</br>
+		</p>
+		
+		<h3>Update Devices Now</h3>
+		<p>
+			Pressing this button will trigger Hush to send messages to all configured Media Centre Devices immediately.
+		</p>
+</body>
+</html>

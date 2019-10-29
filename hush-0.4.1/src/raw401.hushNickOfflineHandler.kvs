@@ -1,0 +1,33 @@
+event(401,hushNickOfflineHandler)
+{
+	/* This handler is for when a bot goes offline from IRC and we get a 'No such nick/channel' reply from the server after asking for a pack
+	# $3 - botName
+	# $4 - msg 
+	*/
+	
+	%speak = $(!%G_hushOptions{"NoiseNone"})
+	# search for a requested download from this nick as they are not online and we have a download pending that will never happen
+	%thisDL = %G_hush->$searchDownloadHashForBot($3,"Requested")
+	
+	if (%thisDL)
+	{
+		%thisDL = $str.split(|||,%thisDL,2)
+		if ($isSet(%thisDL[1]))
+		{
+			%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$setInfo(status,"Cancelled (Bot Offline)")
+			if (%speak) {%G_hush->$doFCW();	echo -w=$window(%G_hushOptions{"FCW"}) $k(13)Auto-Cancel Request$k() of $k(7)%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(packName)$k() from $k(12)%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(botName)$k()\n$b()Reason:$b() Bot is offline. Server told us: $3\: $4;}
+			%G_hushLive{"iTransfersActive"}--;
+			xdcc::doNextAutoDownload
+		}
+		else
+		{
+			if (%G_hush->%debug) {debug -c The download reference did not have an array index value. Check the data mate.;}
+		}
+	}
+	else
+	{
+		# either our search for this download has failed or this msg reply is nothing to do with hush
+		if (%G_hush->%debug) {debug -c Did not find a requested download for bot $b$3$b in the download hash. This bot is not online but it's nothing to do with Hush.;}
+	}
+}
+

@@ -1,0 +1,75 @@
+<html>
+<head><title>Hush::Help::Options::Basic</title></head>
+<body>
+		<h2>Hush Help::Options::Basic</h2>
+		<p>The <i>Options</i> window has a <i>Basic</i> tab which lists some fundamental options and functions. See the animation below to see the current options.
+		</p>
+		<img src="images/hushOptionsBasicAni.gif" alt="hush Options Basic Animated gif"/>
+		<p>
+			<ol>
+				<li>Open the main Hush window by clicking the Hush button on the toolbar in KVIrc (or press Ctrl+Alt+H)</li>
+				<li>Click the Options button</li>
+				<li>Select the Basic tab</li>
+				<li>Change the Found Content window name by editing the name in the text input box.</li>
+				<li>Toggle Silence Watched Channels by tick/unticking the checkbox.</li>
+				<li>Toggle displaying SSL DCC sending options by tick/unticking the checkbox.</li>
+				<li>Toggle sending ZNC Push notifications by tick/unticking the checkbox.</li>
+				<li>Toggle preventing the ZNC *push query window appearing by tick/unticking the checkbox.</li>
+				<li>Export Hush settings to a file on disk by clicking the Export Settings button, selecting where to save and clicking Save button.</li>
+				<li>Import Hush settings from a file on disk by clicking the Import Settings button, selecting which file to load from disk and clicking Open button..</li>
+				<li>Clear the smart mode Haystack by clicking the Clear Haystack button.</li>
+			</ol>
+		</p> 	
+		
+		<h3>The Found Content Window</h3>
+        <p>
+			The <i>Found Content Window</i> is where Hush will display any passive searches it finds, any pack requests made from instant search and any DCC messages it is monitoring. 
+			It will automatically appear in the channel list when it finds a match to any of your searches. The Found Content window will show packs from multiple networks/channels that 
+			you are connected to. Hush knows which channel and network the pack is from and will send the request to the correct place if you click to fetch a pack.
+		</p>
+
+		<h3>Silence Watched Channels</h3>
+	   <p>
+			Many users prefer to silence the channels that show the xdcc announcements of packs from bots (there are thousands of them!). Hush will stop all channel messages in your 
+			watched channels if you tick this option.
+	   </p>
+
+		<h3>SSL Send Option</h3>
+        <p>
+			<i>SSL DCC sending</i> option will display single-click links for sending via SSL DCC in your search matches.
+		</p>
+
+		<h3>ZNC Push Notifications</h3>
+		<p>
+			<i>ZNC Push Notifications</i> option will forward any searches Hush matches through your ZNC server using the ZNC Push module. For this option to work you must have: 
+			<ol>
+				<li>a ZNC server that you are accessing IRC through (<a href="http://znc.in/">ZNC Website</a>)</li>
+				<li>the ZNC Push module installed on the ZNC server (<a href="https://github.com/jreese/znc-push">ZNC Push Module</a>)</li>
+				<li>the ZNC Push module configured (use any service you like, it doesn't matter - as long as it's configured and working. I found Telegram pretty easy to set up)</li>
+			</ol>
+		</p>
+
+		<h3>Prevent ZNC *push query window appearing</h3>
+		<p>
+			<i>Prevent ZNC *push query window appearing</i> option will stop the *push query window appearing in the channel tree list. Note: this will stop the *push query 
+			window from appearing <u>all the time</u>. If you need to use the *push query, you will need to untick this option in Hush Options.
+		</p>
+
+		<h3>Import/Export Settings</h3>
+		<p>
+			<i>Export Settings</i> will let you save all your Hush settings to a file on disk. All settings are saved: channels, searches and option values.
+		</p>
+		<p>
+			<i>Import Settings</i> will let you load Hush settings from a file on disk. If the file loaded is not a valid KVC (KVIrc Config) formatted file then no settings will 
+			change in Hush but no warning will be given. <b>Any existing settings will be overwritten.</b> Use carefully.
+		</p>
+
+		<h3>Clear Haystack</h3>
+        <p>
+			<i>Clearing the Haystack</i> will reset the tracking that Smart Mode has done since KVIrc started. If you are trying to find something that perhaps you have found before 
+			and it wont appear in the Found Content window, you should try clearing the Haystack. The Haystack will only be reset if you click this button or if you click the 
+			"Reset Entire Database" button in the <i>Searching</i> Options tab.
+		</p>
+
+</body>
+</html>

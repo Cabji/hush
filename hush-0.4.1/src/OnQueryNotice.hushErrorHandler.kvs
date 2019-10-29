@@ -1,0 +1,225 @@
+event(OnQueryNotice,hushErrorHandler)
+{
+	# checks if we get a message from a bot and reacts to it
+	# this is currently a really dirty hack as it will respond to all DCC events, not just ones induced by Hush.
+	
+	# old string for removing from remote queue (saved just in case i need it later):  [$cr![!rbt]xdcc::hilightsClick %ircContext \"%G_hushOptions{"FCW"}\" REMOVE %nick $null $null $null $null [$cr()$k(10)REMOVE$k()$cr()]
+	# set the irc context value
+	%ircContext = $window.context($console)
+	%nick = $0
+	%speak = $(!%G_hushOptions{"NoiseNone"})
+	
+	if ($isSet(%G_hush))
+	{
+		%cancel = $false;
+	# dev-note: the following if {} block handles when a bot doesn't support SSLDCC. If in future we decide to make an option where 
+	# we will automatically retry the transfer without SSL, the code here needs to be changed so it's handled speerately.
+		if ($str.contains($str.stripcolors($3),"** Invalid Pack Number, Try Again") || $str.contains($str.stripcolors($3),"this command is unsupported"))
+		{
+			%cancel = $true
+			if ($str.contains($str.stripcolors($3),"** Invalid Pack Number, Try Again"))
+			{
+				%fcwMsg = $b()Nope!$b() $k(5)%nick$k() said the pack number is no longer valid. Try another bot or look for newer notices of this pack.
+				%pStatus = "Cancelled (Invalid Pack Number)"
+			}
+			if ($str.contains($str.stripcolors($3),"this command is unsupported"))
+			{
+				%fcwMsg = $b()Nope!$b() $k(5)%nick$k() said the command is unsupported. Most likely this bot doesn't support SSLDCC and you requested using SSEND.
+				%pStatus = "Cancelled (No SSL)"
+	
+				# check if this bot exists in botsNoSSL array
+				if ($str.grep(%nick,%G_hush->%arrayBotsNoSSL) == $false)
+				{
+					%l = %G_hush->%arrayBotsNoSSL[]#
+					# add this bot to the array if it doesnt exist in there already
+					%G_hush->%arrayBotsNoSSL[%l] = %nick
+					%G_hush->$configSave(%G_hush->%hushConfig, botsNoSSL, %G_hush->%arrayBotsNoSSL)
+				}
+			}
+		}
+	
+	# handles xdcc denied (usually a problem with not being on particular channels to get transfers)
+		if ($str.contains($3,$str.stripcolors("** XDCC SEND denied")))
+		{
+			%cancel = $true
+			%fcwMsg = $b()Info:$b() Transfer from $k(5)%nick$k() was cancelled. Reason: $3
+			%pStatus = "Cancelled (Denied)"
+		}
+	
+	# handles all slots full on bot (remotely queued)
+		if ($str.contains($3,$str.stripcolors("All Slots Full")))
+		{
+			%fcwMsg = $k(5)%nick$k() said you have been placed in their remote queue, the pack will send as soon as possible.;
+			%pStatus = "Waiting (RQ)"
+		}
+	
+	# handles bot being 'offline' which means the bot's sending is turned off, not literally offline. that is handled in RAW 401 handler
+		if ($str.contains($3,$str.stripcolors("bot is not online")))
+		{
+			%cancel = $true
+			%fcwMsg = $b()Nope!$b() $k(5)%nick$k() is not sending stuff at the moment. It is what it is.;
+			%pStatus = "Cancelled (Bot Not Sending)"
+		}
+	
+	# handles if you request the same item twice and it's already remotely queued (do we need to alter this?)
+		if ($str.contains($3 ,$str.stripcolors("** All Slots Full, Denied, You already have that item queued.")))
+		{
+			%fcwMsg = $b()Info:$b() You are already remotely queued for that pack from $k(5)%nick$k();
+			%pStatus = "Waiting (RQ)"
+		}
+	
+	# handles being added to remote queue
+		if ($str.contains($3 ,$str.stripcolors("Added you to the main queue")))
+		{
+			%fcwMsg = $b()Info:$b() $k(5)%nick$k() added you to its remote queue. Message recieved: $3;
+			%pStatus = "Waiting (RQ)"
+		}
+	
+	# handles message about how long you've been remotely queued for
+		if ($str.contains($3 ,$str.stripcolors("or less remaining")))
+		{
+			# output info to user
+			%parts = $str.split(\", $3)
+			for (%i = 0; %i < %parts[]#; %i++)
+			{
+				if (%i == 1) {%msg .= \"$k(5)%parts[%i]$k()\";}
+				else
+					%msg .= %parts[%i];
+			}
+			%fcwMsg = $b()Info:$b() $k(5)%nick$k() still has you remotely queued for a transfer. Message recieved: %msg
+			%pStatus = "Waiting (RQ)"
+		}
+	
+	# handles if you get removed from the remote queue
+		if ($str.contains($3 ,$str.stripcolors("Removed you from the queue for")))
+		{
+			%cancel = $true
+			%fcwMsg = $b()Info:$b() $k(5)%nick$k() removed you from its remote queue. Message recieved: $3\nMoving onto next locally queued download (if any)...;
+			%pStatus = "Cancelled (Bot Removed Us)"
+		}
+	
+	# handles feedback from bot - canceled by user
+		if ($str.contains($3 ,$str.stripcolors("** Closing Connection: Transfer canceled by user")))
+		{
+			%cancel = $true
+			%fcwMsg = $b()Info:$b() Transfer from $k(5)%nick$k() was cancelled.
+			%pStatus = "User Aborted"
+		}
+	
+	# handles feedback from bot - dcc timeout
+		if ($str.contains($3 ,$str.stripcolors("** Closing Connection: DCC Timeout")))
+		{
+			%cancel = $true
+			%fcwMsg = $b()Info:$b() Transfer from $k(5)%nick$k() was cancelled due to a timeout.
+			%pStatus = "Cancelled (Timeout)"
+		}
+	
+	# handles feedback from bot - transfer complete
+		if ($str.contains($3 ,$str.stripcolors("Transfer Completed")))
+		{
+			# nothing needs to happen for this onQuery, but we want to catch it anyway to stop generic debug messages
+			if (%G_hush->%debug) {debug -c $k()Transfer from $k(5)%nick$k() completed. No further action required.;}
+		}
+	
+	
+	# below is the common code that updates the xdccobject in the downloadHash
+		%thisDL = %G_hush->$searchDownloadHashForBot($0,"Requested")
+		if (!%thisDL)
+		{
+			%thisDL = %G_hush->$searchDownloadHashForBot($0,"Waiting (RQ)")
+		}
+		if (%thisDL)
+		{
+			%thisDL = $str.split(|||,%thisDL,2)
+			if ($isSet(%thisDL[1]))
+			{
+				%st = %thisDL[0]
+				%di = %thisDL[1]
+				if (%speak) {%G_hush->$doFCW(); echo -w=$window(%G_hushOptions{"FCW"}) %fcwMsg;}
+				if (%cancel)
+				{
+					%G_hushLive{"iTransfersActive"}--;
+					%G_hushDownloadHash{%st}[%di]->$setInfo(status,%pStatus)
+					%averageSpeed = %G_hushDownloadHash{%st}[%di]->$getInfo(averageSpeed)
+					%ic = %G_hushDownloadHash{%st}[%di]->$getInfo(ircContext)
+					%bName = %G_hushDownloadHash{%st}[%di]->$getInfo(botName)
+					%channelName = %G_hushDownloadHash{%st}[%di]->$getInfo(channelName)
+					%networkname = %G_hushDownloadHash{%st}[%di]->$getInfo(networkName)
+					%pName = %G_hushDownloadHash{%st}[%di]->$getInfo(packName)
+					%pNum = %G_hushDownloadHash{%st}[%di]->$getInfo(packNum)
+					%pGets = %G_hushDownloadHash{%st}[%di]->$getInfo(packGets)
+					%pSize = %G_hushDownloadHash{%st}[%di]->$getInfo(packSize)
+					%st = %G_hushDownloadHash{%st}[%di]->$getInfo(searchTerm)
+	
+					%aSTi = $false
+					# deactivate this searchTerm in the activeSearchTerms array
+					%aSTi = %G_hush->%common->$fnArrayBinarySearch(%st,%G_hush->%activeSearchTerms)
+					if ($typeOf(%aSTi) != boolean)
+					{
+	if (%aSTi == "")
+	{
+		#debug -c "$k(8)--> found active searchTerm %G_hush->%activeSearchTerm[%aSTi] at index [%aSTi]. removing it from the active searchTerm array <--$k()"
+		debug -c $k(15)[FATAL ERROR]$k()\n$b()asti = %aSTi$b()\n typeOf asti = $typeOf(%aSTi)\nfnArrayBinarySearch was called using:\n	st = %st\n	activeSearchTermArray = %G_hush->%activeSearchTerms\n	--- ($k(8)This value has caused onQueryNotice::hushErrorHandler to fail$k(), so check it
+		debug -c "-------------"
+		debug -c This error is a known bug and needs fixing. To re-enable the Event Handler, press Ctrl+Shift+E -> onQueryNotice -> opposite click hushErrorHandler -> Enable Handler -> click Apply.
+		debug -c Alternatively, restart KVirc to reenable the event handler.
+	}
+						%G_hush->%activeSearchTerms[%aSTi] = $null
+						%G_hush->%activeSearchTerms = %G_hush->%common->$fnArrayRemoveEmptyValues(%G_hush->%activeSearchTerms)
+					}
+					if (%speak) {%G_hush->$doFCW(); echo -w=$window(%G_hushOptions{"FCW"}) $k(7)Cancelling$k() %pName from %bName in the local download queue. [Autos: %G_hushLive{"iTransfersActive"} of %G_hushOptions{"TransfersMaxTransfers"}] Bot said: $3;}
+					if (%G_hush->%debug) {debug -c $k(7)we just cancelled$k() %pName from %bName because the bot said: $3;}
+	
+	# insert botstats info to database
+					# fields: (networkName text NOT NULL, channelName text NOT NULL, botName text NOT NULL, transfersTotal integer NOT NULL, transfersSuccess integer NOT NULL, speedBest integer, speedAverage integer
+	
+					# first we must check to see if this specific bot has a record in the botstats table
+					%query = "SELECT COUNT(*) as value FROM botstats WHERE networkName = '%networkname' AND channelName = '%channelname' AND botName = '%bName';"
+					if (%G_hush->$botStats(exists, %query))
+					{
+						# entry exists for this bot, so do an UPDATE call to the database
+						# note: does not update transferSuccess because this is the dcc failure handler
+						%query = "UPDATE botstats SET transfersTotal = transfersTotal + 1, speedBest = MAX(speedBest,%averageSpeed), speedAverage = (speedAverage * transfersTotal + %averageSpeed) / (transfersTotal + 1) WHERE networkName = '%networkName' AND channelName = '%channelName' AND botName = '%bName';"
+					}
+					else
+					{
+						# this is a new bot that we are entering data for
+						# VALUES explained: 	1,0 = transfersTotal and transfersSuccess - new bot means this is the first transfer it has done and this is the failure handler so 0 successfulTransfer
+						#				%averageSpeed,%averageSpeed - first entry the averageSpeed is the best speed so far, and also the overall average speed for this bot.
+						%query = "INSERT INTO botstats VALUES('%networkName','%channelName','%bName',1,0,%averageSpeed,%averageSpeed);";
+					}
+					# send the query to botstats function
+					if (%G_hush->%debug) {debug -c botstats query: %query;}
+					if (%G_hush->$botStats(update,%query))
+					{
+						if (%G_hush->%debug) {debug -c Insert/Update of botstats succeeded for %botName|%channelName|%networkname;}
+					}
+					else
+					{
+						if (%G_hush->%debug) {debug -c Insert/Update of botstats $k(6)failed$k() for %botName|%channelName|%networkname\n$b()Does the botstats table exist in the database? You may need to reset the Hush database to fix this.$b();}
+					}
+	
+					xdcc::hilightsClick %ic %G_hushOptions{"FCW"} UNSUPPORTED %bName %pName %pNum %pGets %pSize %st %thisDL[1] $true
+				}
+				else
+				{
+					if (%pStatus) {%G_hushDownloadHash{%st}[%di]->$setInfo(status,%pStatus);}
+					if (%G_hush->%debug) {debug -c message: $k(12)'$3'$k() did not require the pack request to be cancelled;}
+				}
+			}
+			else
+			{
+				if (%G_hush->%debug) {debug -c $k()Array index did not exist after splitting reference string$k();}
+			}
+		}
+		else
+		{
+			if (%G_hush->%debug) {debug -c $k()No xdccobject with status Requested or Waiting found for $k(7)$0$k(). It means this queryNotice most likely has nothing to do with what Hush does. onQueryNotice message was: $k(7)$3$k();}
+		}
+	}
+	else
+	{
+		return;
+	}
+}
+

@@ -1,0 +1,163 @@
+event(OnChannelMessage,hushInstantSearch)
+{
+	# watches channel messages and adds them to the instant search database if they are pack announces
+	# this handler should only run if the hushMain and instantSearch objects exist, otherwise it will get an error and disable
+	
+	%isABotMsg = $false
+	
+	# if channel is in our watched channels list ...
+	if ($str.grep($chan.name(), %G_hushWatchChannels))
+	{
+		if (!%G_hushOptions{"ISEnabled"}) {return;}
+		if (!$objects.exists(%G_hush)) {return;}
+		if (!$objects.exists(%G_hush->%instantSearch)) {return;}
+		if (!$objects.exists(%G_hush->%sql)) {return;}		
+		# prep channel message for processing (strip whitespaces and colours, fix up some dodgy delimiters)
+		%msg = $str.strip($str.stripcolors($3));
+		%msg = $str.replace(%msg, "[ ", "[")
+		# check if the first few chars are #n - if a message doesnt start with hash number its probably not a bot pack
+		if (!$str.grep("^#[0-9]{1,}", %msg, r)) 
+		{
+	#		debug -c This message didn't look like a botpack to me: $3; 
+			if (%G_hushOptions{"SWC"} && %isABotMsg) {halt;} else {return;}
+		}
+	
+		# try to find the parts of a bot's announce message
+		# dev note: there should only be 4 parts to a bot message: packNum, packGets, packSize and packName
+		# if there are specifically 5 parts, it means the filesize part is problematic (0 filesize)
+		# if there is > 5 parts, it mostly means the packName has spaces in it. we can try to salvage that
+		%parts = $str.split("[ ]+",%msg,r)
+	
+		# if the number of part = 5 we have a problem with the packSize and we can't salvage
+		if (%parts[]# == 5)
+		{
+	#		debug -c this channel message was found to be unsalvagable: $3
+			if (%G_hushOptions{"SWC"} && %isABotMsg) {halt;} else {return;}
+		}
+	
+		# if the number of parts is > 5 we probably have a packName with spaces in it, we can salvage it
+		if (%parts[]# > 5)
+		{
+			# loop through parts, if the index is < 3 just add it to temp array. if index is 3 or more, concat it together as a string
+			for (%i = 0; %i < %parts[]#; %i++)
+			{
+				if (%i < 3)
+					%temp[%i] = %parts[%i];
+				else
+					%packName << %parts[%i];
+			}
+			# assign the concat string to index 3 (packName)
+			%temp[3] = %packName
+			# rewrite the parts array with our new salvaged packName array
+			%parts = %temp
+		}
+	
+		# strip the '#' off the start of the packNum value
+		%parts[0] = $str.rightfromfirst(%parts[0], "#")
+		# strip the 'x' off the end of the packGets value
+		%parts[1] = $str.lefttolast(%parts[1], "x")
+		# convert the packSize to bytes
+		# check if %parts[2] contains something. if it doesn't, means some whitespace has interfered with our split up of the message so we need to reassign which array indexes are the pack details
+		if (%parts[2] == "")
+		{
+			%packSize = %parts[3];
+			%packName = %parts[4];
+		}
+		else
+		{
+			%packSize = %parts[2];
+			%packName = %parts[3];
+		}
+		# strip [ and ] from left and right sides of packSize, strip excess whitespace
+		%packSize = $str.rightfromfirst(%packSize, "[")
+		%packSize = $str.lefttolast(%packSize, "]")
+		%packSize = $str.strip(%packSize)
+		# pop the final character off packSize, it should be either: K, M or G
+		%unit = $str.right(%packSize, 1)
+		if (%unit != "")
+		{
+			%packSize = $str.chop(%packSize, 1)
+			if (%unit == G)
+				%bytes = $integer($math.ceil($($real(%packSize) * 1073741824)));
+			elseif (%unit == M)
+				%bytes = $integer($math.ceil($($real(%packSize) * 1048576)));
+			elseif (%unit == K)
+				%bytes = $integer($math.ceil($($real(%packSize) * 1024)));
+			else
+				%bytes = $integer($math.ceil($($real(%packSize))));
+			%packSize = %bytes
+		}
+	
+		# build hash that holds the pack announce parts
+		%row{"timestamp"} = $unixtime()
+		%row{"networkName"} = $context.networkName($window.context($console));  # get the IRC context of the channel window
+		%row{"channelName"} = $chan.name()
+		%row{"botName"} = $0
+		%row{"packNum"} = %parts[0]
+		%row{"packGets"} = %parts[1]
+		%row{"packSize"} = %packSize
+		%row{"packName"} = %packName
+	
+		# append the pack announce parts to the INSERT query string
+		if (%G_hush->%iDBInsertQuery == $null)
+		{
+			%G_hush->%iDBInsertQuery = "INSERT INTO instant (%G_hush->%iDBFields) VALUES ";
+		}
+		else
+		{
+			%row{"packName"} = $str.replace(%row{"packName"},','')
+			%vals = '%row{"timestamp"}','%row{"networkName"}','%row{"channelName"}','%row{"botName"}','%row{"packNum"}','%row{"packGets"}','%row{"packSize"}','%row{"packName"}'
+			# dev note: change apostrophes to double apostrophes for sqlite, append to insert query with comma seperation
+			%G_hush->%iDBInsertQuery .= "(%vals),"
+			%isABotMsg = $true
+		}
+	
+		%G_hush->%iDBMaxCounter++;
+	
+		# if we hit our max instantDB array size, we need to push the array contents to the sqlite database on disk
+		if (%G_hush->%iDBMaxCounter >= $(%G_hushOptions{"ISWriteSize"} + 1))
+		{
+			%G_hush->%iDBInsertQuery = $str.replace(%G_hush->%iDBInsertQuery, "(,", "(")
+			%G_hush->%iDBInsertQuery = $str.lefttolast(%G_hush->%iDBInsertQuery, ",")
+			%G_hush->%iDBInsertQuery .= ";"
+			%query = %G_hush->%iDBInsertQuery
+	
+			%G_hush->%sql->$queryPrepare(%query)
+			if (!%G_hush->%sql->$queryExec(%query))
+			{
+				if (%G_hush->%debug) 
+				{
+					if (%G_hush->%debug) {debug -c SQL INSERT Query failed. Error given: %G_hush->%sql->$lastError($true)\nQuery written to error log.;}
+					file.write -a $file.localdir(config/Hush/sqlError.txt) %query\n\n
+				}
+			}
+		
+			# remove database records that are now too old
+			%query = "DELETE FROM instant WHERE timestamp <= '$($unixtime() - %G_hushOptions{"ISMaxTime"} * 60)';";
+			%G_hush->%sql->$queryPrepare(%query)
+			if (!%G_hush->%sql->$queryExec(%query))
+			{
+				if (%G_hush->%debug) debug -c SQL DELETE query failed. Error given: %G_hush->%sql->$lastError($true); 
+			}
+					
+			# vacuum the database to save disk space
+			%query = "VACUUM;";
+			%G_hush->%sql->$queryPrepare(%query)
+			if (!%G_hush->%sql->$queryExec(%query))
+			{
+				if (%G_hush->%debug) debug -c SQL VACUUM query failed. Error given: %G_hush->%sql->$lastError($true);
+			}
+	
+			# reset the instant database insert query and the max counter to null
+			%G_hush->%iDBInsertQuery = $null
+			%G_hush->%iDBMaxCounter = 0;
+	
+			# update total number of rows in db for UI
+	#			if (%G_hush->%debug) {debug -c updating row total;}
+			%G_hush->%instantSearch->$fnUpdateTotalRows(); 			
+		}
+		if (%G_hushOptions{"SWC"} && %isABotMsg) {halt;} else {return;}
+	}
+	return;
+}
+

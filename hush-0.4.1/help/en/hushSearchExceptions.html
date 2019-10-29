@@ -1,0 +1,36 @@
+<html>
+<head><title>Hush::Help::Search Exceptions</title></head>
+<body>
+		<h2>Hush Help::Search Exceptions</h2>
+		<p><i>Search Exceptions</i> are search queries that are used to tell Hush what we want <u>don't want</u> to find. They are used to provide a way to filter unwanted content from our search results. For example, 
+		if you hate branded korean subtitles, you can make a Search Exception for KORSUB and anything with KORSUB in the filename will be dismissed. Search exceptions are not case sensitive. You might search for 1080p 
+		quality items but create a search exception for CAM releases which will make it ignore any filenames containing CAM. Be aware that excepting "CAM" will ignore anything that <i>contains</i> CAM also. 
+		You may need to except ".CAM" or ".CAM." (without double quotes) to get the results you want.
+		</p>
+		
+		<p>Search Exceptions can also be used to ignore false positive search matches. Some XDCC announce channels may have lines that announce when a new item has become available. This is usually because they contain the filename 
+		that matches a search you are looking for. If lines like this appear in the Found Content Window, you can inspect the offending line and add something from it as a search exception.
+		</p>
+		
+		<h4>Setting Search Exceptions</h4>
+		
+        <p>To modify your search exceptions: 
+        <ol>
+                <li>Open the main Hush window by clicking the Hush button on the toolbar in KVIrc (or press Ctrl+Alt+H)</li>
+                <li>Click the Searches button</li>
+                <ol>To add a search exception: 
+                        <li>Click inside the search exception text input box and type in an exception value. This can include wildcard characters * and ? but is not a regular expression.</li>
+                        <li>Click the Add button or press Enter to save the exception to the exceptions list</li>
+                        <img src="images/hushAddSearchExceptionAni.gif"/>
+                </ol>
+                <ol>To remove a search exception: 
+                        <li>Click to highlight search exception to be removed in the search exceptions list (you can highlight multiple items at the same time)</li>
+                        <li>Click the Remove button or press Delete or press Backspace to remove the search exception from the search exceptions list</li>
+                        <img src="images/hushRemoveSearchExceptionAni.gif"/>
+                </ol>
+                <li>Close the Searches window</li>
+        </ol>
+	  </p>
+
+</body>
+</html>

@@ -1,0 +1,5 @@
+event(OnIRCConnectionEstablished,hush)
+{
+	if ($isSet(%G_hush)) {%G_hush->$updateValues();}
+}
+

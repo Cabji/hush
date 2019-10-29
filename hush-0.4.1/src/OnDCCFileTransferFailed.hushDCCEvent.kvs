@@ -1,0 +1,145 @@
+event(OnDCCFileTransferFailed,hushDCCEvent)
+{
+	# dcc file transfer failed event handler for Hush
+	
+	### Data Acquisition ###
+	# attempt to find the file transfer in G_hushDownloadHash
+	%speak = $(!%G_hushOptions{"NoiseNone"})
+	if (%G_hushOptions{"NoiseNone"}) {%speak = $false;} else {%speak = $true;}
+	if (%thisDL == $false)
+	{
+		%thisDL = %G_hush->$searchDownloadHashForID($dcc.remoteNick($2),$2,"Receiving")
+		if (%thisDL == $false)
+		{
+			%thisDL = %G_hush->$searchDownloadHashForID($dcc.remoteNick($2),$2,"Cancelled (Passive Bot)")
+			if (%thisDL == $false)
+			{
+				%thisDL = %G_hush->$searchDownloadHashForID($dcc.remoteNick($2),$2,"Requested")
+			}
+		}
+	}
+	
+	
+	### Logical Flow ###
+	if (%thisDL)
+	{
+		%thisDL = $str.split(|||,%thisDL,2)
+		%st = %thisDL[0]
+		%di = %thisDL[1]
+		# kill xdccobject update timer
+		%G_hushDownloadHash{%st}[%di]->$timerUpdateInfo($false,%st|||%di)
+	
+		### Data Acquisition ###
+		%averageSpeed = %G_hushDownloadHash{%st}[%di]->$getInfo(averageSpeed)
+		%attempts = %G_hushDownloadHash{%st}[%di]->$getInfo(attempts)
+		%botName = %G_hushDownloadHash{%st}[%di]->$getInfo(botname)
+		%channelName = %G_hushDownloadHash{%st}[%di]->$getInfo(channelName)
+		%networkName = %G_hushDownloadHash{%st}[%di]->$getInfo(networkName)
+		%status = %G_hushDownloadHash{%st}[%di]->$getInfo(status)
+		%auto = %G_hushDownloadHash{%st}[%di]->$getInfo(autoDownload)
+		%fcwMsg = '';
+	// logic: transfer was not a passive transfer 
+		if (%G_hushDownloadHash{%st}[%di]->$getInfo(status) != "Cancelled (Passive Bot)")
+		{
+	
+		// logic: transfer was an auto download
+			if (%auto)
+			{
+				%G_hushLive{"iTransfersActive"}--;
+				if (%G_hushLive{"iTransfersActive"} < 0) {%G_hushLive{"iTransfersActive"} = 0;}
+			}
+			
+			if ($0 == "Aborted by User")
+			{
+				# transfer aborted by user, update values so we don't retry the download
+				%status = "User Cancelled"
+				%attempts = $(%G_hushOptions{"TransfersMaxRetries"} + 1)
+				%fcwMsg = $k(4)%status$k() - $k(12)$dcc.remoteFileName($2)$k from $k(12)$dcc.remoteNick($2)$k()
+			}
+	
+			if ($0 == "Connection reset by peer" || $0 == "Connection timed out")
+			{
+				# transfer failed unexpectedly, update values and do a retry?
+				# dev-note: setting status to "Retrying" instead of "Failed" means xdcc::doNextAutoDownload will do a retry on it as long as attempts are low enough.
+				%fcwMsg = $k(4)Failed$k() - $k(12)$dcc.remoteFileName($2)$k from $k(12)$dcc.remoteNick($2)$k() did not complete. Reason: '$0'
+				if (%attempts <= %G_hushOptions{"TransfersMaxRetries"})
+				{
+					%status = "Retrying"
+				}
+				else
+				{
+					%status = "Failed"
+				}
+			}
+	
+			%G_hushDownloadHash{%st}[%di]->$setInfo(status,%status)
+			%G_hushDownloadHash{%st}[%di]->$setInfo(attempts,%attempts)
+	
+			if (%G_hushOptions{"ZNCPush"} && %status != "Aborted by User")
+			{
+				msg -q -r=$console(%G_hushDownloadHash{%st}[%di]->$getInfo(ircContext)) *push send Transfer of $dcc.remoteFileName($2) from $dcc.remoteNick($2) did not complete. Reason: '$0'
+			}
+	
+			
+			if (%speak) {%G_hush->$doFCW();	rebind $window(%G_hushOptions{"FCW"}); echo -w=$window(%G_hushOptions{"FCW"}) %fcwMsg;}
+		
+			if (%G_hushLive{"iTransfersActive"} < %G_hushOptions{"TransfersMaxTransfers"})
+			{
+				xdcc::doNextAutoDownload
+			}
+			else
+			{
+				if (%G_hush->%debug) {debug -c maximum auto transfers (%G_hushOptions{"TransfersMaxTransfers"}) already reached;}
+			}
+		}
+		else
+		{
+	// logic: this transfer was a passive transfer
+			if (%G_hush->%debug) {debug -c Download reference %st|||%di was a passive DCC and it's cancellation has already been handled by Hush.;}
+			# build the active search terms array because transfer status just changed
+			%G_hush->$buildActiveSearchTermArray();
+		}
+		%G_hushDownloadHash{%st}[%di]->$updateInfo()
+		
+	
+		# insert botstats info to database
+		# fields: (networkName text NOT NULL, channelName text NOT NULL, botName text NOT NULL, transfersTotal integer NOT NULL, transfersSuccess integer NOT NULL, speedBest integer, speedAverage integer
+	
+		# first we must check to see if this specific bot has a record in the botstats table
+		%query = "SELECT COUNT(*) as value FROM botstats WHERE networkName = '%networkname' AND channelName = '%channelname' AND botName = '%botName';"
+		if (%G_hush->$botStats(exists, %query))
+		{
+			# entry exists for this bot, so do an UPDATE call to the database
+			# note: does not update transferSuccess because this is the dcc failure handler
+			%query = "UPDATE botstats SET transfersTotal = transfersTotal + 1, speedBest = MAX(speedBest,%averageSpeed), speedAverage = (speedAverage * transfersTotal + %averageSpeed) / (transfersTotal + 1) WHERE networkName = '%networkName' AND channelName = '%channelName' AND botName = '%botName';"
+		}
+		else
+		{
+			# this is a new bot that we are entering data for
+			# VALUES explained: 	1,0 = transfersTotal and transfersSuccess - new bot means this is the first transfer it has done and this is the failure handler so 0 successfulTransfer
+			#				%averageSpeed,%averageSpeed - first entry the averageSpeed is the best speed so far, and also the overall average speed for this bot.
+			%query = "INSERT INTO botstats VALUES('%networkName','%channelName','%botName',1,0,%averageSpeed,%averageSpeed);";
+		}
+		# send the query to botstats function
+		if (%G_hush->%debug) {debug -c botstats query: %query;}
+		if (%G_hush->$botStats(update,%query))
+		{
+			if (%G_hush->%debug) {debug -c Insert/Update of botstats succeeded for %botName|%channelName|%networkname;}
+		}
+		else
+		{
+			if (%G_hush->%debug) {debug -c Insert/Update of botstats $k(6)failed$k() for %botName|%channelName|%networkname\n$b()Does the botstats table exist in the database? You may need to reset the Hush database to fix this.$b();}
+		}
+		%G_hush->%queueeditor->$refreshQueue();
+	}
+	else
+	{
+		### Error Handling ###
+		if (%G_hush->%debug) {debug -c $k(7)Problem?$k Couldn't find $k(8)$dcc.remoteFileName($2)$k in the hush downloadHash. (Either this transfer was auto-cancelled for a wrong file, the filename changed in the meantime, or it was never started by Hush );}
+	}
+	
+	# debug -c $k(7)Failure Reason:$k() $0\n$k(7)Session ID:$k() $2
+	
+	### Return ###
+}
+

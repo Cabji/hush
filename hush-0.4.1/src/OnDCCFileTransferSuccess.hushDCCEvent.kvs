@@ -1,0 +1,149 @@
+event(OnDCCFileTransferSuccess,hushDCCEvent)
+{
+	/* Most of the options checked in here are found in the Options -> Transfers tab in Hush.
+	   Code runs depending on if the user has an option ticked or not.
+	*/
+	
+	### Data Acquisition ###
+	%thisDL = %G_hush->$searchDownloadHash($dcc.remoteNick($1),$dcc.remoteFileName($1))
+	%speak = $(!%G_hushOptions{"NoiseNone"})
+	
+	### Logical Flow ###
+	if (%thisDL)
+	{
+		### Data Acquisition ###
+		%G_hushLive{"iTransfersActive"}--;
+		if (%G_hushLive{"iTransfersActive"} < 0) {%G_hushLive{"iTransfersActive"} = 0;}
+		%thisDL = $str.split(|||,%thisDL)
+		%st = %thisDL[0]
+		%di = %thisDL[1]
+		%auto = %G_hushDownloadHash{%st}[%di]->$getInfo(autoDownload)
+		%averageSpeed = %G_hushDownloadHash{%st}[%di]->$getInfo(averageSpeed)
+		%botName = %G_hushDownloadHash{%st}[%di]->$getInfo(botName)
+		%channelName = %G_hushDownloadHash{%st}[%di]->$getInfo(channelName)
+		%ircContext = %G_hushDownloadHash{%st}[%di]->$getInfo(ircContext)
+		%networkName = %G_hushDownloadHash{%st}[%di]->$getInfo(networkName)
+		%packName = %G_hushDownloadHash{%st}[%di]->$getInfo(packName)
+		%searchTerm = %G_hushDownloadHash{%st}[%di]->$getInfo(searchTerm)
+		%tvInc = $false;
+	
+		%fcwMsg = $k(3)Transfer Complete$k() - $k(12)%packName$k() from $k(12)%botName$k() [$str.printf("?.2f",$($real($dcc.averageSpeed($1)) / 1024.0 / 1024.0)) Mb/sec]
+	
+		%G_hushDownloadHash{%searchTerm}[%di]->$setInfo(status,Complete)
+		%G_hushDownloadHash{%searchTerm}[%di]->$timerUpdateInfo($false,%searchTerm|||%di)
+		%G_hushDownloadHash{%searchTerm}[%di]->$updateInfo()
+	
+	# insert botstats info to database
+		# fields: (networkName text NOT NULL, channelName text NOT NULL, botName text NOT NULL, transfersTotal integer NOT NULL, transfersSuccess integer NOT NULL, speedBest integer, speedAverage integer
+	
+		# first we must check to see if this specific bot has a record in the botstats table
+		%query = "SELECT COUNT(*) as value FROM botstats WHERE networkName = '%networkname' AND channelName = '%channelname' AND botName = '%botName';"
+		if (%G_hush->$botStats(exists, %query))
+		{
+			# entry exists for this bot, so do an UPDATE call to the database
+			%query = "UPDATE botstats SET transfersTotal = transfersTotal + 1, transfersSuccess = transfersSuccess + 1, speedBest = MAX(speedBest,%averageSpeed), speedAverage = (speedAverage * transfersTotal + %averageSpeed) / (transfersTotal + 1) WHERE networkName = '%networkName' AND channelName = '%channelName' AND botName = '%botName';"
+		}
+		else
+		{
+			# this is a new bot that we are entering data for
+			# VALUES explained: 	1,1 = transfersTotal and transfersSuccess - new bot means this is the first transfer it has done and this is the success handler so 1 successfulTransfer
+			#				%averageSpeed,%averageSpeed - first entry the averageSpeed is the best speed so far, and also the overall average speed for this bot.
+			%query = "INSERT INTO botstats VALUES('%networkName','%channelName','%botName',1,1,%averageSpeed,%averageSpeed);";
+		}
+		# send the query to botstats function
+		if (%G_hush->%debug) {debug -c botstats query: %query;}
+		if (%G_hush->$botStats(update,%query))
+		{
+			if (%G_hush->%debug) {debug -c Insert/Update of botstats succeeded for %botName|%channelName|%networkname;}
+		}
+		else
+		{
+			if (%G_hush->%debug) {debug -c Insert/Update of botstats $k(6)failed$k() for %botName|%channelName|%networkname\n$b()Does the botstats table exist in the database? You may need to reset the Hush database to fix this.$b();}
+		}
+	
+	// logic: increment searchTerm episode
+		if (%G_hushOptions{"TransfersAutoEpUp"})
+		{
+			%tvInc = %G_hush->%searches->$epUp(%searchTerm)
+			for (%i = $(%di + 1); %i < $length(%G_hushDownloadHash{%searchTerm}); %i++)
+			{
+				%updateST = %G_hushDownloadHash{%searchTerm}[%i]->$getInfo(searchTerm)
+				%updateDQNum = %G_hushDownloadHash{%searchTerm}[%i]->$getInfo(downloadQNum)
+				%updateDI = %G_hushDownloadHash{%searchTerm}[%i]->$getInfo(dhIDNum)
+				%G_hushDownloadHash{%searchTerm}[%i]->$setInfo(status,Previous Pack Completed)
+				%G_hushDownloadHash{%searchTerm}[%i]->$emit(infoUpdated,%updateDQNum,%updateST,%updateDI});
+			}
+		}
+	
+	// logic: remove search term after successful transfer
+		if (%G_hushOptions{"TransfersRmSearchTerm"})
+		{
+		// logic: if this evals true (tv ep value didn't increment, or ep increment is turned off) it means we should remove the searchTerm
+			if (%tvInc == $false)
+			{
+				if (%auto)
+				{
+					%rmSuccess = %G_hush->%searches->$rmSearchTerm(%searchTerm)
+					if (%G_hush->%debug) {debug -c SearchTerm removal result: %rmSuccess;}
+					# the following loop prevents additional queued items that match the same searchTerm from downloading
+					for (%i = $(%di + 1); %i < $length(%G_hushDownloadHash{%searchTerm}); %i++)
+					{
+						%updateST = %G_hushDownloadHash{%searchTerm}[%i]->$getInfo(searchTerm)
+						%updateDQNum = %G_hushDownloadHash{%searchTerm}[%i]->$getInfo(downloadQNum)
+						%updateDI = %G_hushDownloadHash{%searchTerm}[%i]->$getInfo(dhIDNum)
+						%G_hushDownloadHash{%searchTerm}[%i]->$setInfo(status,Previous Pack Completed)
+						%G_hushDownloadHash{%searchTerm}[%i]->$emit(infoUpdated,%updateDQNum,%updateST,%updateDI});
+					}
+				}
+				else
+				{
+					if (%G_hush->%debug) {debug -c This transfer was not an automatic download so it's not in the searches array.;}
+				}
+			}
+			else
+			{
+				if (%G_hush->%debug) {debug -c %thisDL[0]|||%thisDL[1] searchTerm was not removed from searches array. It is probably a TV show searchTerm and the episode was incremented for next week.;}
+			}
+		}
+	// logic: output transfer done msg
+		if (%G_hushOptions{"TransfersDoneMsg"})
+		{
+			if (%speak) {%G_hush->$doFCW();	rebind $window(%G_hushOptions{"FCW"}); echo %fcwMsg;}
+			if (%G_hushOptions{"ZNCPush"})
+			{
+				msg -q -r=$console(%ircContext) *push send $str.stripcolors(%fcwMsg)
+			}
+		}
+	// logic: auto move file to media location
+		if (%G_hushOptions{"TransfersAutoMove"}) {xdcc::moveToLibrary %thisDL[0] %thisDL[1];}
+	// logic: auto update media centre clients
+		if (%G_hushOptions{"TransfersAutoMCUpdate"})
+		{
+			if ($isSet(%G_hush))
+			{
+				timer --single-shot (hushUpdateMediaCentres, 11000)
+				{
+					%G_hush->$updateMediaCentres();
+				}
+			}
+		}
+	
+	# !!! experimental !!! - trigger passive search after tv ep search term is incremented because we want to try to get another ep immediately
+		if (%tvInc)
+		{
+			# if the tvInc object exists, it means the file was a tv ep and we incremented the episode
+			if (%G_hush->%debug) {debug -c \n\nWe just completed a TV ep file so we will do another passive search to look for the next ep\n;}
+			%G_hush->$doPassiveSearch($true);
+		}
+		%G_hush->%queueeditor->$refreshQueue();
+		# dev-note: xdcc::doNextAutoDownload deals with whether we SHOULD start another auto download or not, so we can just call it and not worry about checking stuff
+		xdcc::doNextAutoDownload
+	}
+	else
+	{
+		### Error Handling ###
+		if (%G_hush->%debug) {debug -c search for transfer of $dcc.remoteFileName($1) from $dcc.remoteNick($1) yielded a false return value. This transfer is not in the G_hushDownloadHash! (probably didn't get started by Hush?);}
+	}
+	### Return ###
+}
+

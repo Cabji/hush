@@ -1,0 +1,123 @@
+<html>
+<head><title>Hush::Help::Options::Transfers</title></head>
+<body>
+		<h2>Hush Help::Options::Transfers</h2>
+		<p>The <i>Options</i> window has a <i>Transfers</i> tab which lists options and functions related to transfers with Hush. See the animation below to see the current options.
+		</p>
+		<img src="images/hushOptionsTransfersAni.gif" alt="hush Options Transfers Animated gif"/>
+		<p>
+			<ol>
+				<li>Open the main Hush window by clicking the Hush button on the toolbar in KVIrc (or press Ctrl+Alt+H)</li>
+				<li>Click the Options button</li>
+				<li>Select the Transfers tab</li>
+				<li>Alter the DCC Timeout by editing the value or by using the up/down controls on the spinbox. Note: This setting alters the global KVIrc DCC timeout value.</li>
+				<li>Toggle Automatic Downloads by tick/unticking the checkbox.</li>
+				<li>Toggle whether Automatic Downloads should request transfers via SSLDCC by tick/unticking the checkbox.</li>
+				<li>Toggle whether Automatic Downloads should stop a transfer if the filename is detected to be incorrect by tick/unticking the checkbox.</li>
+				<li>Toggle whether Automatic Downloads should stop a transfer if a passive bot is detected (port 0 transfer) by tick/unticking the checkbox.</li>
+				<li>Alter the Maximum number of Automatic Downloads by editing the value or by using the up/down controls on the spinbox.</li>
+				<li>Toggle whether Automatic Downloads should retry on transfer failure by tick/unticking the checkbox.</li>
+				<li>Alter the Maximum number of retries for downloads by editing the value or by using the up/down controls on the spinbox.</li>
+				<li>Toggle Automatic increment of TV show episode Searches by tick/unticking the checkbox.</li>
+				<li>Toggle Removal of Search after successful download by tick/unticking the checkbox.</li>
+				<li>Toggle Display of message when a transfers completes by tick/unticking the checkbox.</li>
+				<li>Toggle Automatic moving of media files to Library Locations by tick/unticking the checkbox.</li>
+				<li>Toggle Automatic update of Media Centre devices by tick/unticking the checkbox.</li>
+			</ol>
+		</p> 	
+		
+		<h3>DCC Timeout</h3>
+        <p>
+			The <i>DCC Timeout</i> option lets you alter the timeout value for DCC transfers. The recommended value is 190 seconds. Note: this setting directly alters the KVIrc global 
+			DCC Timeout value found in Settings -&amp; Configure KVIrc -&gt; DCC -&gt; Advanced.
+		</p>
+
+		<h3>Automatic Downloads</h3>
+	   <p>
+			The <i>Automatic Downloads</i> option toggles whether Hush will automatically download content when a passive search finds matching results from your Searches list. 
+			You can leave this unticked and Hush will still find content for you and you can manually decide what to download by clicking the choices in the Found Content Window.
+	   </p>
+
+		<h3>Use SSL for Automatic Downloads</h3>
+        <p>
+			The <i>Use SSL for Automatic Downloads</i> option decides whether Automatic Downloads will be requested via SSLDCC or not. Note that not many channels support SSLDCC transfers 
+			so the recommended setting for this is unticked if you use Hush to download from numerous channels.
+		</p>
+
+		<h3>Stop download if filename is wrong</h3>
+		<p>
+			The <i>Stop download if filename is wrong</i> option toggles whether Hush will stop a download if it detects the filename is incorrect. A bot can send an incoorect 
+			file if enough time elapses between when the pack announce data was harvested and when the file is requested. The bot's file serving software can reassign pack numbers 
+			and this is what causes you to be sent an incorrect file.
+		</p>
+
+		<h3>Stop download from passive bots</h3>
+		<p>
+			The <i>Stop download from passive bots</i> option toggles whether Hush will stop a download if it thinks a passive bot is sending the file. Passive transfers are 
+			detected by looking at hte port number of the transfer. If it is port 0 this option will cancel the transfer automatically. Passive bots/transfers only work if 
+			you configure KVIrc and your router correctly to deal with them.
+		</p>
+
+		<h3>Maximum Auto-Downloads</h3>
+		<p>
+			The <i>Maximum Auto-Downloads</i> option defines how many simultaneous automatic downloads Hush will create. Manual downloads are not counted towards this total.
+		</p>
+		
+		<h3>Retry download on transfer failure</h3>
+		<p>
+			The <i>Retry download on transfer failure</i> option toggles whether downloads should be retried if they fail to transfer completely. This applies to all 
+			downloads. (I think)
+		</p>
+
+		<h3>Maximum number of retries</h3>
+        <p>
+			The <i>Maximum number of retries</i> option defines how many retries will be attempted. Note: the initial download attempt is <u>not</u> counted as a "retry". 
+			If you set this value to 1, the file will try to download a total of 2 times (1 initial attempt, 1 retry). You should limit the number of retries as it could 
+			possibly block up a bot for other users and might get you in trouble or banned! Recommended maximum value is 3.
+		</p>
+		
+		<h3>Automatically increment TV show episodes in passive searches</h3>
+		<p>
+			The <i>Automatically increment TV show episodes in passive searches</i> option toggles whether Hush will automatically increment the episode value in the 
+			search term when a TV episode download completes successfully. 
+		</p>
+		<p>
+			This option, in short, makes Hush act like a TV episode subscription service. An example: you found a TV show you like and want to keep watching. Let's call 
+			this show "The Cool Ten". Tick this option so it is activated. Now go to <a href="hushSearches.html">Searches</a> and create a search term that will find 
+			the next (or first) episode for you. You would add something like: <b>*the.cool.ten.s01e01*720*mkv*</b> as a search term to the Searches list.
+		</p>
+		<p>
+			When Hush finds a match for that search and a download (could be an auto or manual download) of a matching file successfully completes, Hush will detect 
+			it just downloaded a TV episode and it will alter the search term to become: <b>*the.cool.ten.s01e02*720*mkv*</b> automatically, ready for the next episode 
+			to become available.
+		</p>
+		<p>
+			This option also allows you to traverse a season of a show and try to download all the episodes in succession if they are available.
+		</p>
+		
+		<h3>Remove search term after successful transfer</h3>
+		<p>
+			The <i>Remove search term after successful transfer</i> option toggles whether a search term should be removed after a file has been successfully downloaded 
+			for the search term. Note that this opton will not be applied to search terms deemed to be TV episodes if the <i>Automatically increment TV show episodes 
+			in passive searches</i> option is ticked. This option is recommended to be ticked.
+		</p>
+		
+		<h3>Display messages when a transfer completes</h3>
+		<p>
+			The <i>Display messages when a transfer completes</i> option toggles whether a message will be shown in the Found Content Window when a transfer completes.
+		</p>
+		
+		<h3>Automatically move media files to Library location</h3>
+		<p>
+			The <i>Automatically move media files to Library location</i> option toggles whether successfully completed transfers that are a supported 
+			<a href="hushLibraryOptions.html">media type</a> will be moved into their Location as designated by the Library settings. At time of writing (v0.3.9) only
+			Movies and TV Shows media types are supported for this option, only for unpackaged files (ie: not TAR or RAR files), and only on Windows OS.
+		</p>
+		
+		<h3>Automatically update Media Centre devices</h3>
+		<p>
+			The <i>Automatically update Media Centre devices</i> option toggles whether your configured <a href="hushOptionsMediaCentre.html">Media Centre devices</a> should be notified when a 
+			transfer completes successfully.
+		</p>
+</body>
+</html>

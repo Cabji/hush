@@ -1,0 +1,64 @@
+event(OnDCCFileTransferBegin,hushDCCEvent)
+{
+	# hush needs to check if the file we are being given is what we expected. if it isn't, it will automatically stop the transfer
+	# and scrap this entry in the downloadHash
+	
+	### Data Acquisition ###
+	%thisDL = %G_hush->$searchDownloadHash($dcc.remoteNick($0),$dcc.remoteFileName($0))
+	%speak = $(!%G_hushOptions{"NoiseNone"})
+	
+	### Logical Flow ###
+	if (%thisDL)
+	{
+		## Data Acquisition ##
+		%thisDL = $str.split(|||,%thisDL)
+	
+		## Function Execution ##
+		%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$setInfo(status, Receiving)
+		if (%speak) {%G_hush->$doFCW(); echo -w=$window(%G_hushOptions{"FCW"}) $k(8)Transfer Started$k() - $k(12)$dcc.remoteFileName($0)$k is being sent. Wrong File? $cr![!rbt]xdcc::hilightsClick $dcc.ircContext($0) \"%G_hushOptions{"FCW"}\" CANCEL $dcc.remoteNick($0) $dcc.remoteFileName($0) %G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(packNum) %G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(packGets) %G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(packSize) %thisDL[0] %thisDL[1] \[$cr()$k(10)CANCEL$k()$cr()\];}
+		// start the update timer for this xdccobject
+		%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$timerUpdateInfo($true,%thisDL[0]|||%thisDL[1])
+	}
+	else
+	{
+	### Error Handling ###
+	
+		// the remoteFilename doesn't match anything we have in our downloadHash, so theres a high chance this file is incorrect
+		// search the downloadHash based on botName, sessionID and status (Queued) to find the most likely candidate
+	
+		## Data Acquisition ##
+		%badDL = %G_hush->$searchDownloadHashForID($dcc.remoteNick($0),$0,Queued)
+		
+	// logic: if we find the xdccobject that matches the badDL criteria
+		if (%badDL)
+		{
+			// this entry in the downloadHash is now outdated so lets not use it again, abort this transfer & remove the file from disk
+	
+			# Data Acquisition #
+			%badDL = $str.split(|||,%badDL)
+			%G_hushLive{"iTransfersActive"}--;
+	
+			# Functon Execution #
+			%G_hushDownloadHash{"%badDL[0]"}[%badDL[1]]->$setInfo(status, Wrong File)
+			dcc.abort -q $0
+			if ($file.exists(%G_hushOptions{"mediaIncoming"}/$dcc.remoteFileName($0)))
+			{
+				if (%G_hush->%debug) {debug -c The file $dcc.remoteFileName($0) from $dcc.remoteNick($0) is not what we requested. (Pack number has most likely changed in the meantime) so we are aborting this transfer and removing hte file from disk.;}
+				file.remove -q $file.fixpath(%G_hushOptions{"mediaIncoming"}/$dcc.remoteFileName($0))
+			}
+			%G_hushDownloadHash{"%badDL[0]"}[%badDL[1]]->$updateInfo()
+			# dev-note: xdcc::doNextAutoDownload deals with whether we SHOULD start another auto download or not, so we can just call it and not worry about checking stuff
+			xdcc::doNextAutoDownload
+		}
+		else
+		{
+			// if the search for the badDL entry returned false, it means that the DCC file we are handling probably wasn't initiated 
+			// by Hush, so we should just leave it be. It's probably a manual DCC the user is doing.
+			
+			## Error Handling ##
+			if (%G_hush->%debug) {debug -c The transfer of $dcc.remoteFileName($0) from $dcc.remoteNick($0) is probably a manual transfer. Leaving it alone.;}
+		}
+	}
+	### Return ###
+}
+

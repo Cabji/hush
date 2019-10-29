@@ -1,0 +1,251 @@
+<html>
+ <head>
+  <title>Hush - XDCC Search System with Automation</title>
+  <link rel="shortcut icon" href="favicon.ico" />
+    <link rel="stylesheet" type="text/css" href="lib/eepsite.css" />
+ </head>
+ <body>
+<div class="main">
+<div id="navbar"><a href="#news">News</a><a href="#about">About</a><a href="#download">Download</a><a href="hushChangelog.html">Changelog</a><a href="hush/help/hushHelp.html">Help</a></div>
+<h1>Hush - XDCC Search and Download Software (with a bit of Automation)</h1>
+
+<div id="news">
+	<h2>20191022 - v0.4.0 Released</h2>
+	<p>Version 0.4.0 of Hush is released. This version has a fairly stable automatic downloading system (there are still some bugs though). The major improvement is the Transfer Priority system 
+	which automatically collects transfer success rate data and then decides which bots to download from. You can choose to give priority to specific channels as well if you like. Anyway, 
+	<a href="#download">get it into you</a>.</p>
+	<p><b>Read the README file</b> about updating to 0.4.0!
+	</p>
+
+
+	<h2>20191017 - Automatic Priority System</h2>
+	<p>The new code for this feature didn't take long to do. Some time was spent developing a good SQL query that did what I wanted and it has made creating the code in the Hush classes a lot simpler.</p>
+	<p>I have completed the new sorting code for the download hash, which means all that there is left to do is now integrate that code into the existing classes, and then do some testing of it. Testing 
+	will take a little bit of time to just let the software run and do its thing, but once I'm happy I will probably be packaging up for release of version 0.4.0. While it's testing I will probably 
+	update the help files if I have the free time.
+	</p>
+	
+	<h2>20191008 - Bot Stat Tracking for Automatic Priority</h2>
+	<p>Current development version is still 0.4.0 and I have mostly been trying to deal with small bugs for the last few months. I havent spent much time working on Hush but this extended time 
+	without updating and releasing has been spent on letting the software run so I can try to improve the faults it has. During this time I have seen that the most annoying thing that is 
+	happening is some bots will transfer 99.9% of a file and then the transfer will fail.</p>
+	<p>I had options in this scenario. I could just write some code in the DCC failure handler that checks how 
+	much of a file is transferred and if it is enough (like, 97% or more) I could tell Hush to accept it as a "completed" download. I didn't choose this option because when files don't complete 
+	100% you get annoying problems like not being able to seek through the file on your media player.</p>
+	<p>I always wanted to implement a "priority" system for deciding which channel or bots we should request from first so I was going to create this, but then I realized that while I had the 
+	software doing something I _didn't_ want to happen, I should create a feature that best deals with that problem first and I can then also add the additional "manual priority" feature afterward.
+	</p>
+	<p>So I am currently creating the code that will house stats on transfers bots do inside the sqlite database and then when a passive search triggers, Hush will automatically be able to 
+	decide what priority the bots get. Again, if you also prefer to do a "manual prioritize" like telling Hush "try to download automatically from this channel first" I will add that later on as well 
+	since it will simply be an additional layer to the automatic priority system.
+	</p>
+
+	<h2>20190904 - Lost Changelog</h2>
+	<p>Some how I lost the most recent changelog. If memory serves me correctly, I think I was editing it via Filezilla and some how it ended up wiped to a 0 byte file. *shrug* The latest copy I have backed up was from 
+	v0.3.5, so all changelog data from v0.3.6 to 0.3.9 (and the pending 0.4.0 release) has currently been lost. I will just note it in the changelog file and continue on.
+	</p>
+	
+	<h2>20190805 - General Info Update</h2>
+	<p>Just posting to say that I am still alive and still developing Hush. Currently life is busy with work and other things but I have been removing rogue debug message calls that are littered throughout the code so it 
+	takes a while to find them all but hopefully I eventually find them all.
+	</p>
+	
+	<h2>20190618 - Development Continues</h2>
+	<p>I have added code to log bots that don't support SSL DCC transfers and now the auto-downloading code will check what your options are that relate to SSL transfers etc. and decides what to do. I am testing this code for 
+	now to make sure I get it all working properly and in future I will probably use the "no SSL bots" data to make the passive searching not look for results from those bots if you only want to use SSL transfers to maximize 
+	user security if it is desired.
+	</p>
+	<p>I am also thinking about doing some additions to the download queue window so you can re-request failed transfers for example.
+	</p>
+
+	<h2>20190519 - v0.3.9 Released</h2>
+	<p>Version 0.3.9 has been released. It features updates and improvements to the Download Queue, adds an option for automated movie title acquisition and various other bugfixes. See the 
+	<a href="hushChangelog.html">changelog</a> for details.
+	</p>
+
+	<h2>20190510 - Updating Help Files</h2>
+	<p>I am happy with how v0.3.9 is running. Auto downloading seems pretty stable. Haven't had red errors for a while now. I am updating the help files and then will be doing a release.
+	</p>
+
+	<h2>20190506 - Status Update</h2>
+	<p>I haven't stopped developing. I have added a really nice feature to Hush and as always new code means new bugs so I have been working hard on trying to get rid of bugs before I release again. There is now 
+	an automated system to magically make searches for content appear in your Searches list. See the <a href="hushChangelog.html">changelog</a> for details.
+	</p>
+	<p>I don't know when release date is yet. I want to redo the Help files as well as they haven't been updated since v0.3.1 I think. I found a program to make animated GIFs so I want ot make some nice animated images 
+	for the documentation showing how to configure stuff.
+	</p>
+	<p>If you really are keen to get your hands on v0.3.9 you have to join #hush on i2p IRC and I can dcc it to you early.
+	</p>
+	
+	<h2>20190308 - Status Update</h2>
+	<p>It's been a month since 0.3.8 released. I have been doing ongoing testing of the automated downloading. I found a few bugs and fixed them up already in the development version but I still want to find a few more and 
+	maybe add some additional features before I release 0.3.9. It just takes longer to do a release when I have to let the software run downloading stuff to try and find bugs. If you are interested to chat with me, you can find me 
+	in #hush on i2p IRC. (Install i2p router, connect to 127.0.0.1 in your irc client to access i2p irc, join channel #hush)
+	</p>
+	
+	<h2>20190202 - v0.3.8 Released</h2>
+	<p>This release includes the addition of the Download Queue widget which allows you to see everything held in the %G_hushDownloadHash variable and shows the download status and info as a transfer occurs.
+	Some bug fixes were also done, see the <a href="hushChangelog.html">changelog</a> for details. Get it from the <a href="#download">Download</a> section.
+	</p>
+
+	<h2>20190105 - v0.3.7 Released</h2>
+	<p>This release mostly fixes the faults with the maximum number of automatic downloads system. Previously if you increased the number of maximum auto-downloads it just wouldn't work correctly. In this release this has 
+	(hopefully) been fixed up properly. Hush will start multiple auto-downloads up to a maximum number you set in Options -&gt; Transfers and it does this on a <i>search term basis</i>.
+	</p>
+	<p>So here's how it works:
+	<ol>
+		<li>You enter your passive searches</li>
+		<li>The passive search timer triggers (or you hit hte new passive search button in Options)</li>
+		<li>When Hush finds matches for your searches, it will begin auto-downloading (if you've set it to)</li>
+		<li>If you search for *macgyver*s03e10* and Hush finds 6 files that match this, it will only start 1 download for that search term. It won't start 3 downloads for *macgyver*s03e10* at the same time</li>
+		<li>If another search term matches, for example *ready*player*one*1080p*, it will also start downloading the first match for that search term for 2 concurrent auto-downloads (and so on, up to your maximum number of auto-downloads)</li>
+		<li>When a file for a search downloads <i>successfully</i> the search term is removed from the download queue, removing any pending matches for that search with it. Because we already downloaded a file for that search, so we dont want to download duplicate files right?</li>
+	</ol>
+	</p>
+	
+	<h2>20181118 - Hush Eepsite Update</h2>
+	<p>The Hush eepsite looks a little different to the old Hush website.</p>
+	
+	<h2>20181105 - i2p eepsite</h2>
+	<p>
+		I have decided to move the Hush website to the i2p network.
+	</p>
+	<p>
+		i2p is an 'anonymous internet' network which offers greater privacy. Given the nature of the Hush addon, I think it is appropriate to move to i2p. If users 
+		really want it, they will either put in the effort to access the official eepsite to get the software, or they will find the software themselves at other 
+		sources online not affiliated with the developer.
+	</p>
+	<p>
+		The website will probably just contains a list of checksum values so users can verify if a file they obtain has been altered or not.
+	</p>
+	<p>
+		This eepsite is at <a href="hush.i2p">hush.i2p</a> or at <a href="http://kxcyhuzgp2wlxz4sczyzgoj7vkoaopl3a5tyb644rtexcjjky43a.b32.i2p/">http://kxcyhuzgp2wlxz4sczyzgoj7vkoaopl3a5tyb644rtexcjjky43a.b32.i2p/</a>
+		You can <a href="http://hush.i2p/?i2paddresshelper=8MJAwsEAzS3ZjeUbNgQTa4ie~8WehiDIB-eUhyOWpqzFkbnqVtAh2W1EgZoOOVvGBg50kPcXKZMm5yNLzq6fPnQ2F9IDn76SnIR2UQ6MAgnlAI99XZh3qyEsXeP5xhykJYbh3tnZMTxOx-plrU60OnAL9ENK9nnjcc5HghgSdAk4JNdlqhkrAf5eILSfS5S5q7FxlohzSctp0TC2eYudRNDqk7aS8z75iTVtm4KgIXy4qNN0~~Ad6LtigqyxIZ~OX7990liQuykwtQKBWa3EWES4tTepkdWmuDM8Up-6VAkB7bqT8RZkneaqoM3HesN2bubO9BJEF9t2ioIM8P4oAaWqg86971v9DnIVh17vjWnHr144bw0PFkT-gysmxMq01LTxuhTsUm99bA4N7gceWwqezML2KO74SgZR5PuTulAZhMmlQzsmKd3AXcEbHqYhT16l3JziAClTCiqBQqGtn9t48nABH0Y5wmgN1CBsSVQMOZlPyRrW9B5c3Rtgb-43BQAEAAcAAA==">add it to your addressbook.</a>
+	</p>
+	
+	<h2>20181027 - Bug Update</h2>
+	<p>
+		Just a notice to say that I've been testing the auto download system more and with v0.3.6 you shouldn't set the number of auto downloads above 1 because 
+		the auto download system will download clone files which leads to bad data and then will automatically disable event handlers etc. In other words - it's 
+		not working correctly if you set it over 1 auto download at a time.
+	</p>
+	<p>
+		This bug is the first thing I will be working on fixing, the bold item in the Changelog is always my current coding target.
+	</p>
+</div>
+
+<div id="about">
+	<h2>About</h2>
+	<p>
+		Hush is an addon for KVIrc. It requires at least KVIrc v4.9.2 or higher from v0.2.6 onwards. For Windows binaries of KVIrc v4.9.x please visit 
+		<a href="https://github.com/kvirc/KVIrc/wiki/Downloading-KVIrcs-nightly-source-or-binaries#windows-appveyor-artifacts-instructions">Downloading KVIrc Nightly 
+		Binaries for Windows</a> and follow the instructions listed there.
+	</p>
+	<p>
+		Hush creates a search system for XDCC channels along with automation for a number of aspects related to your media content. It removes the need to: 
+		<ul>
+			<li>publicly search for content</li>
+			<li>use subscription systems that reside on other computers</li>
+			<li>find content titles by offering a degree of automation to continue content acquisition</li>
+			<li>manually move incoming content into media library locations on local storage</li>
+		</ul>
+	</p>
+	<p>
+		It supports watching multiple IRC networks and channels. It should work with any XDCC channel that uses the default bot announcement message layout.
+	</p>
+	<p>
+		Hush is a hobby project being developed by one person mostly for personal enjoyment, so updates are sparodic - as time and life permits - but it is classed 
+		as "under development" by the author. It is written in KVS, KVIrc's internal scripting language.
+	</p>
+	<p>
+		For queries or bug reports, please join the #hush channel on I2P IRC.
+	</p>
+</div>
+
+<div id="download">
+	<h2>Download</h2>
+	<p>
+		You can download any/all version of Hush from here.
+	</p>
+	<h4>Important Message for v0.2.6 or lower Users <i>Upgrading</i> Hush</h4>
+	<p>
+		If upgrading, make sure you export your hush settings prior to installing the new version! The upgrade routine will remove your settings file and you will 
+		have to enter all your settings again. To export your settings go to Hush -&gt; Options -&gt; Export Settings and save to a file. Import from this file 
+		after upgrading.
+	</p>
+	<p>
+		From v0.2.7 onwards there is a dialog asking if you want to preserve your existing config file when uninstalling or upgrading the script.
+	</p>
+	<p>
+		<b>Milestone releases</b> were: 
+		<ul>
+			<li>v0.3.1 where Instant Search was added</li>
+			<li>v0.3.5 when a major rewrite of the Passive Search code was done. Prior to v0.3.5, the passive search system did not use a SQLite database as its 
+			backend. The rewrite was done because Hush was consuming far too much CPU time when I had a couple of hundred search terms loaded into it. The v0.3.5 
+			release onward brings the CPU use down from 20-40% usage to &lt; 1%.</li>
+			<li>v0.3.9 the automatic download system seems relatively very stable compared to previous releases</li>
+		</ul>
+	</p>
+	<table border="0">
+		<tr>
+			<td align="left">
+				<ul>
+					<li><a href="download/hush-0.4.0.tar">v0.4.0</a> (recommended release)</li>
+				</ul>
+			</td>
+			<td align="left" style="width:1%; white-space:nowrap;">
+				<ul>
+					<li><a href="download/hush-0.3.9.tar">v0.3.9</a></li>
+					<li><a href="download/hush-0.3.8.tar">v0.3.8</a></li>
+					<li><a href="download/hush-0.3.7.tar">v0.3.7</a></li>
+					<li><a href="download/hush-0.3.6.tar">v0.3.6</a></li>
+					<li><a href="download/hush-0.3.5.tar">v0.3.5</a> - Major rewrite of Passive Search was done here</li>
+					<li>v0.3.4 - skipped release</li>
+					<li><a href="download/hush-0.3.3.tar">v0.3.3</a></li>
+					<li><a href="download/hush-0.3.2.tar">v0.3.2</a></li>
+					<li><a href="download/hush-0.3.1.tar">v0.3.1</a> - Instant Search was added here</li>
+					<li><a href="download/hush-0.3.0.tar">v0.3.0</a></li>
+				</ul>
+			</td>
+			<td align="left">
+				<ul>
+					<li><a href="download/hush-0.2.9.tar">v0.2.9</a></li>
+					<li><a href="download/hush-0.2.8.tar">v0.2.8</a></li>
+					<li><a href="download/hush-0.2.7.tar">v0.2.7</a></li>
+					<li><a href="download/hush-0.2.6.tar">v0.2.6</a></li>
+					<li><a href="download/hush-0.2.5.tar">v0.2.5</a></li>
+					<li><a href="download/hush-0.2.4.tar">v0.2.4</a></li>
+					<li><a href="download/hush-0.2.3.tar">v0.2.3</a></li>
+					<li><a href="download/hush-0.2.2.tar">v0.2.2</a></li>
+				</ul>
+			</td>
+		</tr>
+	</table>
+</div>
+
+<div class="notify">
+Hush is free software. Use it at your own risk.
+</div> 
+
+<hr><div class="footnote">	
+Document last edited: November 2018.</div>
+</div>
+ </body>
+ <!-- Default Statcounter code -->
+<script type="text/javascript">
+        var sc_project=11683541;
+        var sc_invisible=1;
+        var sc_security="264861a6";
+</script>
+<script type="text/javascript" src="https://www.statcounter.com/counter/counter.js" async>
+</script>
+<noscript>
+        <div class="statcounter">
+          <a title="Web Analytics" href="http://statcounter.com/" target="_blank">
+            <img class="statcounter" src="//c.statcounter.com/11683541/0/264861a6/1/" alt="Web Analytics">
+          </a>
+        </div>
+</noscript>
+<!-- End of Statcounter Code -->
+</html>
+

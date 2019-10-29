@@ -1,0 +1,75 @@
+event(OnDCCSessionCreated,hushDCCEvent)
+{
+	# this event is triggered when a DCC session object is created. 
+	# a transfer doesnt need to start for a dcc session to be created and/or destroyed.
+	# if a transfer is for an already existing file, no Transfer event will be triggered, only these session events will trigger.
+	
+	
+	### Data Acquisition ###
+	%thisDL = %G_hush->$searchDownloadHash($dcc.remoteNick($0),$dcc.remoteFileName($0))
+	rebind $console($dcc.ircContext($0)); # rebind output to console window of the irc network of this transfer
+	if (%G_hushOptions{"NoiseNone"}) {%speak = $false;} else {%speak = $true;}
+	
+	### Logical Flow ###
+	if (%thisDL)
+	{
+		## Data Acquisition ##
+		%thisDL = $str.split(|||,%thisDL)
+		%st = %thisDL[0]
+		%di = %thisDL[1]
+		# Function Execution #
+		%G_hushDownloadHash{%st}[%di]->$setInfo(sessionID, $0)
+		%G_hushDownloadHash{%st}[%di]->$setInfo(fileTotalSize, $int($dcc.remoteFilesize($0)))
+		%qNum = %G_hushDownloadHash{%st}[%di]->$getInfo(downloadQNum)
+		if ($dcc.remoteport($0) == 0 && %G_hushOptions{"TransfersAutoStopPassive"})
+		{
+			%fcwHeader = "Auto-Cancel Transfer"
+			%fcwReason = "The transfer is from a passive bot (port 0). (Check settings to change this)"
+			%debugReason = "The transfer is from a passive bot and G_hushOptions{TransfersAutoStopPassive} is true."
+			%G_hushDownloadHash{%st}[%di]->$setInfo(status,"Cancelled (Passive Bot)")
+		}
+	}
+	else
+	{
+		# the transfer filename is not in the downloadHash
+		if (%G_hush->%debug) {debug -c $dcc.remoteFileName($0) from $dcc.remoteNick($0) is not in the G_hushDownloadHash!;}
+		if (%G_hushOptions{"TransfersAutoStopWrongFile"})
+		{
+			%fcwHeader = "Auto-Cancel Transfer"
+			%fcwReason = "The filename being sent isn't found in the download queue. (Bot's pack number probably changed in the meantime) [%G_hushLive{"iTransfersActive"} of %G_hushOptions{"TransfersMaxTransfers"} active]"
+			%debugReason = "as filename was not found in the download queue. There is no valid xdccobject for this transfer in the Hush downloadHash. DCC session id: $0"
+		}
+	}
+	
+	if ((!%thisDL && %G_hushOptions{"TransfersAutoStopWrongFile"}) || (%thisDL && $dcc.remoteport($0) == 0 && %G_hushOptions{"TransfersAutoStopPassive"}))
+	{
+		# if the filename is wrong OR (dcc port is 0 AND AutoStopPassive is on) we will stop this transfer immediately
+			
+		## Data Acquisition ##
+		%G_hushLive{"iTransfersActive"}--;
+	
+		# Function Execution #
+		msg $dcc.remoteNick($0) XDCC CANCEL
+		dcc.abort -q $0
+		if (%speak) {rebind $window(%G_hushOptions{"FCW"}); echo $k(13)%fcwHeader$k() of $k(7)$dcc.remoteFileName($0)$k() from $k(12)$dcc.remoteNick($0)$k()\n$b()Reason:$b() %fcwReason [Autos: %G_hushLive{"iTransfersActive"} of %G_hushOptions{"TransfersMaxTransfers"}];}
+		if (%G_hush->%debug) {debug -c $k(13)%fcwHeader$k() %debugReason;}
+		if ($file.exists(%G_hushOptions{"mediaIncoming"}/$dcc.remoteFileName($0)))
+		{
+			if (%G_hush->%debug) {debug -c The file is not what we requested so we are aborting this transfer and removing the file from disk.;}
+			file.remove -q $file.fixpath(%G_hushOptions{"mediaIncoming"}/$dcc.remoteFileName($0))
+		}
+	
+		# dev-note: we do not have to update botstats in here because if we cancel a passive download a dcc transfer failed event will also be triggered
+	
+		# dev-note: xdcc::doNextAutoDownload deals with whether we SHOULD start another auto download or not, so we can just call it and not worry about checking stuff
+		xdcc::doNextAutoDownload
+	}
+	
+	if (%thisDL) 
+	{
+		%G_hush->%queueeditor->$refreshItem(%qNum,%st,%di);
+	}
+	%G_hush->%queueeditor->$refreshQueue();
+	### Return ###
+}
+

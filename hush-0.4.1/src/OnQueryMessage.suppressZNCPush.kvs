@@ -1,0 +1,19 @@
+event(OnQueryMessage,suppressZNCPush)
+{
+	# handles suppression of the *push query window from ZNC Push
+	# note that this setting will supress ALL use of the query window to *push. Turn the setting off if you want to talk to your
+	# ZNC Push module
+	# I tried a number of different ways to prevent the *push query window appearing but this was the only one I could get to 
+	# work correctly so far.
+	
+	if (%G_hushOptions{"ZNCPreventQuery"})
+	{
+		# kill the *push query window as soon as its made
+		# grab the *push query window's ID
+		%ircContext = $window.context($console);
+		%pushWID = $query("*push", %ircContext)
+		window.close -q %pushWID
+		if (%G_hush->%debug) {debug -c query window (%pushWID) for ZNC Push module was automatically closed by Hush. If you need the query window, go to Hush (Ctrl+Alt+H) -> Options -> untick Prevent ZNC *push query window appearing. (Set debug to false to hide these messages);}
+	}
+}
+

@@ -1,0 +1,39 @@
+event(OnCTCPRequest,hushCTCPCheckDCCSend)
+{
+	%d = $str.split(" ",$5)
+	if (%d[0] == SEND)
+	{
+		%thisDL = %G_hush->$searchDownloadHash($0, %d[1])
+		if (%thisDL)
+		{
+			if (%G_hush->%debug) {debug -c found this file in the download hash;}
+			%thisDL = $str.split(|||,%thisDL)
+			if ($file.size($option(stringIncomingPath)/%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(packName)) == %d[4])
+			{
+				if (%G_hush->%debug) {debug -c  The filesize of the downloaded file on disk matches the size the bot is saying it has;}
+				# this DCC SEND file already exists in the incoming folder and the filesize shows the download is complete
+				# we need to cancel the download with the bot
+				msg $0 XDCC CANCEL
+				# try to move this file into media library
+				if (%G_hushOptions{"TransfersAutoMove"}) {xdcc::moveToLibrary %thisDL[0] %thisDL[1];}
+	
+				# wipe the searchTerm entry from G_hushDownloadHash as we've gotten a file for it and this was an autoDownload
+	 			if (%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(autoDownload)) {%G_hushDownloadHash{"%thisDL[0]"} = $null;}
+	
+				# since the file we have is already complete, this is where we need to decrement the active transfers value
+				%G_hushLive{"iTransfersActive"}--;
+				# and now trigger for the next queued download to be requested
+				if (%G_hushOptions{"TransfersAutoToggle"}) {xdcc::doNextAutoDownload;}
+			}
+			else
+			{
+				if (%G_hush->%debug) {debug -c The local filesize didn't match the filesize the bot told us it has.\nFilename = $option(stringIncomingPath)/%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(packName))\n Local filesize = $file.size($option(stringIncomingPath)/%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(packName))\nFilesize the bot said: %d[4]\nThis file should be resuming or it's a new transfer?;}
+			}
+		}
+		else
+		{
+			if (%G_hush->%debug) {debug -c This file wasn't found in the Hush download hash. It's either a manual DCC activated outside of Hush or an avatar download.;}
+		}
+	}
+}
+

@@ -1,0 +1,59 @@
+action.create -t=generic -k="Ctrl+Alt+Q" ("hushQueueEditor",$tr("Download Queue"),$tr("Displays the Hush Download Queue window"),"kvi_bigicon_filetransfer.png","77")
+{
+	# show the Hush download queue window
+	
+	if ($objects.exists(%G_hush) == $false)
+	{
+		%G_hush = $new(hush::main, 0, hushMain)
+	}
+	
+	%G_hush->$showQueueEditor()
+	%G_hush->%queueeditor->$raise()
+}
+
+action.create -t=generic -k="Ctrl+Alt+H" ("hushMain",$tr("Hush",hush),"Displays the Hush main window.","Hush/hush.png","Hush/hush.png")
+{
+	# shows the main Hush window & creates related objects
+	
+	if ($objects.exists(%G_hush)) 
+	{
+		%G_hush->$showMain()
+	}
+	else
+	{
+		%G_hush = $new(hush::main, 0, hushMain)
+		if (%G_hushOptions{"ISPSToggle"})	%G_hush->$timerPassiveSearch()
+		%G_hush->$showMain()
+		if ($isSet(%G_hush->%library) == $false) %G_hush->%library = $new(hush::library, 0, "Hush Library Object");
+		if ($isSet(%G_hush->%libraryoptions) == $false) %G_hush->%libraryoptions = $new(hush::libraryoptions, 0, "Hush Library Widget")
+		timer --single-shot (hushScanLibrary, 2000)
+		{
+			%G_hush->%library->$scanLibrary()
+		}
+	}
+	
+	if ($isSet(%G_hush->%channels) == $false) {%G_hush->%channels = $new(hush::channels, 0, "Hush Channels Widget");}
+	if ($isSet(%G_hush->%common) == $false) {%G_hush->%common = $new(hush::common, 0, "Hush Common Functions");}
+	if ($isSet(%G_hush->%instantsearch) == $false) {%G_hush->%instantsearch = $new(hush::instantsearch, 0, "Hush Instant Search Widget");}
+	if ($isSet(%G_hush->%library) == $false) {%G_hush->%library = $new(hush::library, 0, "Hush Library Object");}
+	if ($isSet(%G_hush->%libraryoptions) == $false) {%G_hush->%libraryoptions = $new(hush::libraryoptions, 0, "Hush Library Widget");}
+	if ($isSet(%G_hush->%options) == $false) {%G_hush->%options = $new(hush::options, 0, "Hush Options Widget");}
+	if ($isSet(%G_hush->%queueeditor) == $false) {%G_hush->%queueeditor = $new(hush::queueeditor, 0, "Hush Download Queue Widget");}
+	if ($isSet(%G_hush->%searches) == $false) {%G_hush->%searches = $new(hush::searches, 0, "Hush Searches Widget");}
+	if ($isSet(%G_hush->%searchesImport) == $false) {%G_hush->%searchesImport = $new(hush::searchesimport, 0, "Hush Searches Import Widget");}
+	if ($isSet(%G_hushDownloadHash) == $false) {%G_hushDownloadHash = $hash();}
+}
+
+action.create -t=generic -k="Ctrl+Alt+I" ("hushInstantSearch",$tr("Instant Search"),$tr("Opens the Hush Instant Search widget"),"179","179")
+{
+	# show the Hush instant search window
+	
+	if ($objects.exists(%G_hush) == $false)
+	{
+		%G_hush = $new(hush::main, 0, hushMain)
+	}
+	
+	%G_hush->$showInstantSearch()
+	%G_hush->%instantsearch->$raise()
+}
+

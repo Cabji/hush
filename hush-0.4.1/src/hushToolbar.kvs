@@ -1,0 +1,5 @@
+toolbar.create hushToolbar Hush 305
+toolbar.additem hushToolbar hushMain
+toolbar.additem hushToolbar hushInstantSearch
+toolbar.additem hushToolbar hushQueueEditor
+toolbar.show hushToolbar

@@ -1,0 +1,40 @@
+<html>
+<head><title>Hush::Help::Library Options</title></head>
+<body>
+		<h2>Hush Help::Library Options</h2>
+		<h3>Media Library Configuration</h3>
+		<p>The recommended thing to configure first is the location where you store your media <i>while it is downloaded and after it is downloaded</i>.</p>
+		<img src="images/hushLibraryOptions.gif" alt="Media Library Options configuration animated gif"/>
+		<p>The above animation shows how to configure the incoming directory, add and remove a media location.</p>
+		
+		<h4>Media Locations</h4>
+		<p>A <i>media location</i> is comprised of 3 elements: 1. a name, 2. a media type, 3. a location on a storage drive.</p>
+		<p>You can use any name you like. Choosing the appropriate content type for a media location enables Hush to 
+		automatically move new content from the incoming location to where you want it to be stored in your existing (or new) media library. The location should be the top-level of where you store a type of content. For example, 
+		a TV Shows content type location would be the folder that holds all the folders for each TV show. You wouldn't make a media location for each TV show you have or want. Hush will deal with TV show names and season folders.
+		</p>
+		
+		<h4>Information about how Hush handles movies and TV shows</h4>
+		<p>Hush tries to automatically detect what the media type is of any file it is downloading. It will automatically assign a downloading file a media type it thinks is correct, otherwise it will be categorized 
+		as "Other".
+		</p>
+		<p>The <i>Movie</i> media type will allow Hush to automatically move freshly downloaded movies into a media location you have tagged as Movie media type. Hush does not support seperate folders for each movie. It only 
+		supports placing all movie files into a single movies folder.
+		</p>
+		<p>The <i>TV Shows</i> media type allows Hush to automatically move freshly downloaded TV show episodes into a media location you have tagged as TV Shows media type. Hush supports the "Show Name/Season 00" folder format 
+		and only supports "S00E00" format for seasons and episodes in tv show filenames.
+		</p>
+		
+		<h4>Scan Library</h4>
+		<p>The <i>Scan Library</i> button will manually trigger a scan of all the entries in the <i>Existing Media Locations</i> list. The library scan builds background data that lets Hush know what media you already have. 
+		A library scan is performed at KVIrc startup. The library scan can cause KVIrc to temporarily "freeze" (aka Not Responding) but this is normal, especially if you have a large media collection or if your media is 
+		located on a USB drive that may go to sleep or needs to power up after a period of inactivity.
+		</p>
+		
+		<h4>Remove</h4>
+		<p>The <i>Remove</i> button will remove a <i>selected</i> item from the <i>Existing Media Locations</i> list.</p>
+		
+		<h4>Status Area</h4>
+		<p>The status area of this window will show information about what the library scan found in your configured locations.</p>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<html>
+<head><title>Hush::Help::Options::Searching</title></head>
+<body>
+		<h2>Hush Help::Options::Searching</h2>
+		<p>The <i>Options</i> window has a <i>Searching</i> tab which lists options and functions related to searching for content with Hush. See the animation below to see the current options.
+		</p>
+		<img src="images/hushOptionsSearchingAni.gif" alt="hush Options Searching Animated gif"/>
+		<p>
+			<ol>
+				<li>Open the main Hush window by clicking the Hush button on the toolbar in KVIrc (or press Ctrl+Alt+H)</li>
+				<li>Click the Options button</li>
+				<li>Select the Searching tab</li>
+				<li>Toggle the activation of the main Hush database by tick/unticking the checkbox.</li>
+				<li>Toggle Passive Searching by tick/unticking the checkbox.</li>
+				<li>Toggle whether Instant Searching should obey Search Exceptions by tick/unticking the checkbox.</li>
+				<li>Toggle the automated movie title acquisition system by tick/unticking the checkbox.</li>
+				<li>Toggle whether Hush should find content you have had before by tick/unticking the checkbox.</li>
+				<li>Alter the Database Buffer by editing the value or by using the up/down controls on the spinbox.</li>
+				<li>Alter the database's Write Buffer by editing the value or by using the up/down controls on the spinbox.</li>
+				<li>Alter the Passive Search frequency by editing the value or by using the up/down controls on the spinbox.</li>
+				<li>Trigger a Passive Search immediately by clicking the "Passive Search Now" button.</li>
+				<li>Trigger a reset of the entire Hush database by clicking the "Reset Entire Database" button.</li>
+			</ol>
+		</p> 	
+		
+		<h3>Enable Hush Database</h3>
+        <p>
+			The <i>Enable Hush Database</i> option lets you toggle the script code Hush uses to build a database of content on your local computer. This option must be ticked for 
+			any searching to work in Hush (passive and instant). The main reason this option is here is for if you think Hush may be adversely affecting your computer or KVIrc client. 
+			You can switch almost all of the background work Hush does by unticking this option to see if it makes a difference.
+		</p>
+
+		<h3>Enable Passive Searching</h3>
+	   <p>
+			The <i>Enable Passive Searching</i> option toggles whether the passive searching searching system is active. Passive Search allows you to have Hush watch for a list of 
+			things you want to download and it will download anything that becomes available from that list (the <a href="hushSearches.html">Searches</a> list). The Passive Search 
+			system has been designed to be "smart" so that it tries to not download any duplicate content. It has been designed to replace use of "subscription" systems 
+			some IRC channels offer giving the advantage of your subscription data existing only on your local machine.
+	   </p>
+
+		<h3>Instant Search should obey Search Exceptions</h3>
+        <p>
+			The <i>Instant Search should obey Search Exceptions</i> option decides whether Instant Search will obey Search Exceptions or not. <a href="hushSearchExceptions">Search Exceptions</a> 
+			were initially designed for the Passive Searching system but it became apparent that it is useful to have the option to have them applied also to Instant Search. It is 
+			arguably as convenient to <u>not</u> have Instant Search obeying Search Exceptions, hence the toggle option. Instant Search will also display a message to advise you if 
+			this option may be affecting you finding search results.
+		</p>
+
+		<h3>Automatically search for popular movies</h3>
+		<p>
+			The <i>Automatically search for popular movies</i> option toggles a background system that will automatically fetch popular, upcoming movie titles from IMDB.com and 
+			converts them into entries in the Searches list. This system allows you to not have to think about what movie titles you want to get, as long as you're happy to download 
+			all the mainstream, popular movies form the US. Be advised that this option will add approximately 120 entries to the Searches list so you may like to export your 
+			settings first before trying this option.
+		</p>
+
+		<h3>Don't search for stuff I've had before</h3>
+		<p>
+			The <i>Don't search for stuff I've had before</i> option toggle whether automated systems will look for content that you have had on your system before - <b>including 
+			content you have deleted</b>. This feature aims to let you remove old, unwatched or watched content which is now defunct to free up storage space and Hush will not 
+			re-search for or re-download that deleted content.
+		</p>
+
+		<h3>Database Buffer</h3>
+		<p>
+			The <i>Database Buffer</i> option defines how often announce data will be discarded from the database. The value of this buffer is in minutes because as pack announce 
+			data gets older it becomes more unreliable, so it is economical to delete it once it reaches a certain age. If you set this to 60 minutes, when you use instant search 
+			all the results will be no older than 60 minutes. The higher you set this value, the more disk space the database file will consume, but you have access to older data.
+		</p>
+		
+		<h3>Write Buffer</h3>
+		<p>
+			The <i>Write Buffer</i> option defines how often announce data will be written to the database. The value of this buffer is in entries. An entry is one pack 
+			announcement message. When a message occurs in one of your watched channels, the message is analyzed and if it is deemed to be a pack announce it is stored in RAM. 
+			When we have enough entries in RAM, they are saved to the database. The time it takes for this to happen will vary depending on how many channels are being watched, 
+			how many bots there are in each channel, how often the bots announce packs on offer, lag and so on. The higher you set this value, the less frequent the database 
+			will be written to and the longer it takes for new announce data to become available for searching. The average time with the default settings, watching 5 major 
+			channels roughly equals a database write and new searchable data every 40 seconds.
+		</p>
+
+		<h3>Passive Search Frequency</h3>
+        <p>
+			The <i>Passive Search Frequency</i> option defines how often a Passive Search is triggered. Depending on how much content you download and how often it releases 
+			you can change this option to suit.
+		</p>
+		
+		<h3>Passive Search Now</h3>
+		<p>
+			You can trigger a Passive Search manually using this button.
+		</p>
+		
+		<h3>Reset Entire Database</h3>
+		<p>
+			You can reset all of Hush's databases by clicking this button. It will reset the harvested content records as well as the "smart mode" database.
+		</p>
+</body>
+</html>
