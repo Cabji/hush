@@ -2366,21 +2366,21 @@ class("hush::options","widget")
 		privateimpl(@%btnCHS, mousePressEvent)
 		{
 			# clicked clear haystack button
-			%G_hush->%options->$clearHaystack()
+			%G_hush->%optionsWidget->$clearHaystack()
 		}
 		
 		privateimpl(@%btnESTF, mousePressEvent)
 		{
 			# clicked export setting to file button
 			# get filename to export to from user and save in $fileIO function
-			%G_hush->%options->$fileIO("save", "Select path and filename to export settings", "hushSettings.txt", "All files (*.*)", "hushESTF")
+			%G_hush->%optionsWidget->$fileIO("save", "Select path and filename to export settings", "hushSettings.txt", "All files (*.*)", "hushESTF")
 		}
 		
 		privateimpl(@%btnISFF, mousePressEvent)
 		{
 			# clicked import setting from file button
 			# get filename to import from from user and load in $fileIO function
-			%G_hush->%options->$fileIO("open", "Select path and filename to import settings", "hushSettings.txt", "All files (*.*)", "hushISFF")
+			%G_hush->%optionsWidget->$fileIO("open", "Select path and filename to import settings", "hushSettings.txt", "All files (*.*)", "hushISFF")
 		}
 		
 		privateimpl(@%chbISObeySE, toggleEvent)
@@ -3644,7 +3644,7 @@ class("hush::main","widget")
 		@%arrayBotsNoSSL = $array
 		@%common = $new(hush::common, $$, "Hush Common Functions Object")
 		@%dbgI = 0
-		@%debug = $false
+		@%debug = $true
 		@%downloadOrder = $array
 		@%hashAutoDownload = $null
 		@%hushChannelPriority = $file.localdir("config/Hush/channelPriority.conf")
@@ -3657,7 +3657,7 @@ class("hush::main","widget")
 		@%ircContexts = $null
 		@%scriptName = "Hush"
 		@%searchImportsAutoFlag = $false
-		@%version = "0.4.0"
+		@%version = "0.4.1"
 		
 		# database stuff must come after the member property declarations
 		@$dbCreate();

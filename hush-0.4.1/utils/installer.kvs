@@ -206,7 +206,7 @@ class(installer,object)
 		%c .= "unset \%G_hushSearches$lf"
 		%c .= "unset \%G_hushSExceptions$lf"
 		%c .= "unset \%G_hushOptions$lf"
-		%c .= "unset \%G_hushDCCObjs$lf"
+		%c .= "unset \%G_hushDownloadHash$lf"
 		%c .= "}"
 		eval %c
 	}
