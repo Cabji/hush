@@ -1,7 +1,7 @@
-# hush
+<h1>Hush ReadMe</h1>
 hush development
 
-bug notes
+<h2>bug notes</h2>
 
 there is a bug that producesd the following error: 
 
