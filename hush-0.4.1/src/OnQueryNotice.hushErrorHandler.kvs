@@ -22,7 +22,7 @@ event(OnQueryNotice,hushErrorHandler)
 				%fcwMsg = $b()Nope!$b() $k(5)%nick$k() said the pack number is no longer valid. Try another bot or look for newer notices of this pack.
 				%pStatus = "Cancelled (Invalid Pack Number)"
 			}
-			if ($str.contains($str.stripcolors($3),"this command is unsupported"))
+			if ($str.contains($str.stripcolors($str.strip($3)),"this command is unsupported"))
 			{
 				%fcwMsg = $b()Nope!$b() $k(5)%nick$k() said the command is unsupported. Most likely this bot doesn't support SSLDCC and you requested using SSEND.
 				%pStatus = "Cancelled (No SSL)"
