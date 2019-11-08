@@ -21,7 +21,7 @@ when this occurred on Nov 08, the debug logs showed that Hush had attempted to a
 I am not sure if the multi-download bug relates to the aSTi bug?
 
 ----
-The Multi Download Bug
+<h3>The Multi Download Bug</h3>
 
 Debug log showed that: 
 
