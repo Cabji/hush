@@ -1,6 +1,14 @@
 <h1>Hush ReadMe</h1>
 hush development
 
+<h2>ToDo</h2>
+<ul>
+    <li>Transfer Management</li>
+    <ul>
+        <li>Build a system to track pending requested downloads and decide when a transfer request has had long enough and cancel it.</li>
+        <li>The request tracking needs to ensure it handles rogue bots that take ages to send files. If Hush decides to move on from a requested download, it needs to be able to ignore if a bot decides to send the file later on.</li>
+    </ul>
+</ul>
 <h2>bug notes</h2>
 
 there is a bug that producesd the following error: 
