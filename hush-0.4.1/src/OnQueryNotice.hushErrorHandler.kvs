@@ -159,7 +159,7 @@ event(OnQueryNotice,hushErrorHandler)
 	if (%aSTi == "")
 	{
 		#debug -c "$k(8)--> found active searchTerm %G_hush->%activeSearchTerm[%aSTi] at index [%aSTi]. removing it from the active searchTerm array <--$k()"
-		debug -c $k(15)[FATAL ERROR]$k()\n$b()asti = %aSTi$b()\n typeOf asti = $typeOf(%aSTi)\nfnArrayBinarySearch was called using:\n	st = %st\n	activeSearchTermArray = %G_hush->%activeSearchTerms\n	--- ($k(8)This value has caused onQueryNotice::hushErrorHandler to fail$k(), so check it
+		debug -c $k(15)FATAL ERROR$k()\n$b()asti = %aSTi$b()\n typeOf asti = $typeOf(%aSTi)\nfnArrayBinarySearch was called using:\n	st = %st\n	activeSearchTermArray = %G_hush->%activeSearchTerms\n	--- ($k(8)This value has caused onQueryNotice::hushErrorHandler to fail$k(), so check it
 		debug -c "-------------"
 		debug -c This error is a known bug and needs fixing. To re-enable the Event Handler, press Ctrl+Shift+E -> onQueryNotice -> opposite click hushErrorHandler -> Enable Handler -> click Apply.
 		debug -c Alternatively, restart KVirc to reenable the event handler.
