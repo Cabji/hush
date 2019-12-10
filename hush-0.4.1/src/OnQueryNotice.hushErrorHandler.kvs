@@ -154,8 +154,14 @@ event(OnQueryNotice,hushErrorHandler)
 					%aSTi = $false
 					# deactivate this searchTerm in the activeSearchTerms array
 					%aSTi = %G_hush->%common->$fnArrayBinarySearch(%st,%G_hush->%activeSearchTerms)
-					if ($typeOf(%aSTi) != boolean)
+					if ($typeOf(%aSTi) == integer)
 					{
+						%G_hush->%activeSearchTerms[%aSTi] = $null
+						%G_hush->%activeSearchTerms = %G_hush->%common->$fnArrayRemoveEmptyValues(%G_hush->%activeSearchTerms)
+					}
+					else
+					{
+	# dev-note: this else clause is only here for bug tracking.
 	if (%aSTi == "")
 	{
 		#debug -c "$k(8)--> found active searchTerm %G_hush->%activeSearchTerm[%aSTi] at index [%aSTi]. removing it from the active searchTerm array <--$k()"
@@ -164,8 +170,6 @@ event(OnQueryNotice,hushErrorHandler)
 		debug -c This error is a known bug and needs fixing. To re-enable the Event Handler, press Ctrl+Shift+E -> onQueryNotice -> opposite click hushErrorHandler -> Enable Handler -> click Apply.
 		debug -c Alternatively, restart KVirc to reenable the event handler.
 	}
-						%G_hush->%activeSearchTerms[%aSTi] = $null
-						%G_hush->%activeSearchTerms = %G_hush->%common->$fnArrayRemoveEmptyValues(%G_hush->%activeSearchTerms)
 					}
 					if (%speak) {%G_hush->$doFCW(); echo -w=$window(%G_hushOptions{"FCW"}) $k(7)Cancelling$k() %pName from %bName in the local download queue. [Autos: %G_hushLive{"iTransfersActive"} of %G_hushOptions{"TransfersMaxTransfers"}] Bot said: $3;}
 					if (%G_hush->%debug) {debug -c $k(7)we just cancelled$k() %pName from %bName because the bot said: $3;}
