@@ -11,6 +11,7 @@ hush development
 </ul>
 <h2>bug notes</h2>
 
+<h3>aSTi bug</h3>
 there is a bug that producesd the following error: 
 
 [Nov08-23:07:12] [KVS] Runtime error: Array index didn't evaluate to an integer
@@ -53,3 +54,10 @@ Debug log showed that:
 11. At 23:07:12 a query notice triggers the hushErrorHandler. The query notice sent by the bot was: "Sorry, this command is unsupported" which is a case handled by hushErrorHandler
 12. aSTi is returned value of hush::common::fnArrayBinarySearch
 13. appears as though in this instance only, the error generated was dues to the $k()[FATAL ERROR]$k() <- square brackets were mistaken for an array index reference. This was not truly the aSTi bug.
+
+<h3>Media Libary Scan Bug</h3>
+On KVIrc startup, the media library scan function will run. It will successfully scan the configured media content locations and find Movies and TV titles, placing their values into the appropriate arrays and files.
+
+If you open the Media Library window after startup and click the "Scan Media Library" button, the media scan will run, but it will find 0 or 1 title only.
+
+This bug needs investigation.
