@@ -754,6 +754,7 @@ class("hush::searches","widget")
 		
 		if (%G_hushOptions{"TransfersAutoEpUp"} == 1)
 		{
+			%incType = "episode"
 			%searchTerm = $0
 		
 			for (%uid = 0; %uid < @%lbS->$count(); %uid++)
@@ -761,8 +762,10 @@ class("hush::searches","widget")
 				# check if the text at the listbox entry we've got matches out searchTerm
 				if (@%lbS->$textAt(%uid) == %searchTerm)
 				{ 
+					# check if the searchTerm contains only a season value. if it does, change incType to season
+					if ($str.match("\\.s[0-9]*\\.",@%lbS->$textAt(%uid),r,$false)) {%incType = "season";}
 					# alter the episode number up one
-					%newSearch = @$epChange(@%lbS->$textAt(%uid), episode, up)
+					%newSearch = @$epChange(@%lbS->$textAt(%uid), %incType, up)
 					if (%newSearch != $false)
 					{
 						if (%G_hush->%debug) debug -c info: search string altered to: %newSearch
@@ -1352,10 +1355,19 @@ class("hush::queueeditor","widget")
 		
 		# dev-note: we have to use isSet for the check here because we want 0 to be an acceptable value for the logic
 		// refresh all seen info for this qnum
-		for (%i = 0; %i < @%propertiesSeen[]#; %i++)
+		
+		if ($isSet(%qNum))
 		{
-			%colOutput = @$parseColForOutput(%i,%st,%di);
-			@%lviDownloads[%qNum]->$setText(%i,%colOutput)
+			for (%i = 0; %i < @%propertiesSeen[]#; %i++)
+			{
+				%colOutput = @$parseColForOutput(%i,%st,%di);
+				@%lviDownloads[%qNum]->$setText(%i,%colOutput)
+			}
+		}
+		else
+		{
+			// qNum is not set! wth?
+			if (%G_hush->%debug) {debug -c $b()FATAL ERROR$b() - qNum value is not set.\nisSet(qNum): $isSet(%qNum)\nqNum value: %qNum\n typeOf(qNum): $typeOf(%qNum);}
 		}
 	}
 	
@@ -2118,6 +2130,11 @@ class("hush::options","widget")
 		@%mleTPChannels->$setAlignment(Left)
 		@%mleTPChannels->$setFixedSize(@$width,100)
 		
+		# checkbox for absolute channel priority
+		@%chbTPChannelAbsoluteToggle = $new(checkbox, @%wgtPageTransferPriority)
+		@%chbTPChannelAbsoluteToggle->$setText("Give channels an absolute priority")
+		@%chbTPChannelAbsoluteToggle->$setToolTip("Enabling this will give the listed channels a priority regardless of bot transfers speeds or success rates. It lets you give the maximum priority to a <i>specific channel</i> to attempt to obtain files from there before anywhere else.")
+		
 		# populate child widgets of Transfer Priority tab
 		
 		if (%G_hushOptions{"TransferPrioritySpeedSuccess"} != "") { @%slTPSpeedSuccess->$setValue(%G_hushOptions{"TransferPrioritySpeedSuccess"}); }
@@ -2129,6 +2146,8 @@ class("hush::options","widget")
 		#if (%G_hush->%debug) {debug -c loading channel priorites from %G_hush->%hushChannelPriority;}
 		@%mleTPChannels->$loadFile(%G_hush->%hushChannelPriority)
 		}
+		if (%G_hushOptions{"TransferPriorityChannelAbsoluteToggle"} != "") { @%chbTPChannelAbsoluteToggle->$setChecked(%G_hushOptions{"TransferPriorityChannelAbsoluteToggle"}); }
+		else { @%chbTPChannelAbsoluteToggle->$setChecked($true); }
 		
 		# layout for Transfer Priority page
 		@%lPageTransferPriority->$addMultiCellWidget(@%lblTPHelp, 0,0,0,2)
@@ -2348,6 +2367,7 @@ class("hush::options","widget")
 			%G_hushOptions{"TransfersMaxTransfers"} = @%sbTransfersMaxTransfers->$value()
 			%G_hushOptions{"TransferPrioritySpeedSuccess"} = @%slTPSpeedSuccess->$value()
 			%G_hushOptions{"TransferPriorityToggle"} = @%chbTPToggle->$isChecked()
+			%G_hushOptions{"TransferPriorityChannelAbsoluteToggle"} = @%chbTPChannelAbsoluteToggle->$isChecked()
 			%G_hushOptions{"TransfersRetryToggle"} = @%chbTransfersRetryToggle->$isChecked()
 			%G_hushOptions{"TransfersRmSearchTerm"} = @%chbTransfersRmSearchTerm->$isChecked()
 			%G_hushOptions{"TransfersSSLAuto"} = @%chbTransfersSSLAuto->$isChecked()

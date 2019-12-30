@@ -14,15 +14,18 @@ event(401,hushNickOfflineHandler)
 		%thisDL = $str.split(|||,%thisDL,2)
 		if ($isSet(%thisDL[1]))
 		{
-			%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$setInfo(status,"Cancelled (Bot Offline)")
-			if (%speak) {%G_hush->$doFCW();	echo -w=$window(%G_hushOptions{"FCW"}) $k(13)Auto-Cancel Request$k() of $k(7)%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(packName)$k() from $k(12)%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(botName)$k()\n$b()Reason:$b() Bot is offline. Server told us: $3\: $4;}
+			%st = %thisDL[0]
+			%di = %thisDL[1]
+			%G_hushDownloadHash{%st}[%di]->$setInfo(status,"Cancelled (Bot Offline)")
+			if (%speak) {%G_hush->$doFCW();	echo -w=$window(%G_hushOptions{"FCW"}) $k(13)Auto-Cancel Request$k() of $k(7)%G_hushDownloadHash{%st}[%di]->$getInfo(packName)$k() from $k(12)%G_hushDownloadHash{%st}[%di]->$getInfo(botName)$k()\n$b()Reason:$b() Bot is offline. Server told us: $3\: $4;}
 			%G_hushLive{"iTransfersActive"}--;
 			if (%G_hushLive{"iTransfersActive"} < 0) {%G_hushLive{"iTransfersActive"} = 0;}
 			xdcc::doNextAutoDownload
+			%G_hush->%queueeditor->$refreshQueue()
 		}
 		else
 		{
-			if (%G_hush->%debug) {debug -c The download reference did not have an array index value. Check the data mate.;}
+			if (%G_hush->%debug) {debug -c The download reference did not have an array index value. Check the data in G_hushDownloadHash mate.;}
 		}
 	}
 	else
