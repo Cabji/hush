@@ -17,6 +17,7 @@ event(401,hushNickOfflineHandler)
 			%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$setInfo(status,"Cancelled (Bot Offline)")
 			if (%speak) {%G_hush->$doFCW();	echo -w=$window(%G_hushOptions{"FCW"}) $k(13)Auto-Cancel Request$k() of $k(7)%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(packName)$k() from $k(12)%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(botName)$k()\n$b()Reason:$b() Bot is offline. Server told us: $3\: $4;}
 			%G_hushLive{"iTransfersActive"}--;
+			if (%G_hushLive{"iTransfersActive"} < 0) {%G_hushLive{"iTransfersActive"} = 0;}
 			xdcc::doNextAutoDownload
 		}
 		else
