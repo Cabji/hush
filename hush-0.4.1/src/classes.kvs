@@ -258,9 +258,9 @@ class("hush::searchesimport","widget")
 		
 		If arguments are not passed, the function will use values available in the GUI widgets
 		
-		
 		The function will return false if it finds no movie titles, otherwise it will return true
 		*/
+		
 		if ($typeOf($0) == string) {%url = $0;} else {%url = @%leImportURL->$text();}
 		# note: %urlType also has to be set INSIDE the callback code block below. if you alter this value you need to alter the other as well
 		if ($typeOf($1) == string) {%urlType = $1;} else {%urlType = @%coboImportURL->$current();}
@@ -277,6 +277,10 @@ class("hush::searchesimport","widget")
 				{
 					# reset the @%lbResults box entries
 					%G_hush->%searchesImport->%lbResults->$clear();
+		
+					//dev-note: before this function runs, you should always update the library movies array and the permanent record array
+					if ($typeOf(%G_hush->%library) == object) {%G_hush->%library->$scanLibrary();}
+		
 					# fetch the content from the URL
 					http.asyncGet --auto-file-name --winctrl=h --existing-file-action=o -i=%urlType --clear (%url, $file.fixpath(%incoming\\hushSearchesImport.html))
 					{
@@ -299,7 +303,7 @@ class("hush::searchesimport","widget")
 							else {%urlType = %G_hush->%searchesImport->%coboImportURL->$current();}
 		#					debug -c urlType = %urlType
 							%title = $false
-		#					# dev note: this code probably only works for Movie titles, so far it's untested with TV shows or other video types.
+							# dev note: this code probably only works for Movie titles, so far it's untested with TV shows or other video types.
 							# code written 20180522
 							# loop through file string
 							for (%i = 0; %i < %f[]#; %i++)
@@ -4813,7 +4817,7 @@ class("hush::library","object")
 		# iterate over the lviMediaEntries array
 		if (%G_hush->%libraryoptions->%lviMediaEntries[]# != 0)
 		{
-			# wipe the old media library array
+			# wipe the old media library arrays, perm record is read from file on disk
 			@%arr_Library = $array
 			@%arr_Movies = $array
 			@%arr_TVShows = $array
