@@ -4817,10 +4817,8 @@ class("hush::library","object")
 		# iterate over the lviMediaEntries array
 		if (%G_hush->%libraryoptions->%lviMediaEntries[]# != 0)
 		{
-			# wipe the old media library arrays, perm record is read from file on disk
+			# wipe the old media library array, perm record is read from file on disk
 			@%arr_Library = $array
-			@%arr_Movies = $array
-			@%arr_TVShows = $array
 			@%moviesPermRecord  = %G_hush->$configLoad(@%hushMoviesPermRecord, moviesPermRecord)
 			# update the status message on the library options widget
 			%G_hush->%libraryoptions->%lblStatusLeft->$setText("Scanning media locations...")
@@ -4844,7 +4842,7 @@ class("hush::library","object")
 					@%arr_Library <+ @$fnScanDirs(%path, %filetypes)
 				}
 			}
-			if (%G_hush->%debug) {debug -c Library Scan Complete. @%arr_Library[]# entries in library array;}
+			if (%G_hush->%debug) {debug -c $k(2)Library Scan Complete. @%arr_Library[]# entries in library array$k();}
 			# scan finished, update status message on library options widget
 			%G_hush->%libraryoptions->%lblStatusLeft->$setText("Scan complete. %G_hush->%libraryoptions->%lviMediaEntries[]# locations scanned. @%arr_Library[]# items found.")
 			# write the hush media library to file on disk
@@ -5023,6 +5021,12 @@ class("hush::library","object")
 		@%arr_TVShows = %G_hush->$configLoad(@%hushTVShows, tvshowTitles)
 		@%moviesPermRecord  = %G_hush->$configLoad(@%hushMoviesPermRecord, moviesPermRecord)
 		
+		# build the "found already" strings from the Movies and TVShows arrays
+		// dev-note: <, operator casts the array values over to a CSV string
+		# the "found already" strings get used in the buildTVShows amd buildMovies functions
+		@%strMoviesFoundAlready <, @%arr_Movies
+		@%strTVFoundAlready <, @%arr_TVShows
+		
 		/*
 		
 		arr_Movies / %G_hush->%library->%arr_Movies
@@ -5081,9 +5085,8 @@ class("hush::library","object")
 				# check that the media entry is a TV Show type
 				if (%mediatype == "TV Shows")
 				{
-					%success = $true;
 					%tCount = 0;
-					if (%G_hush->%debug) debug -c info: $k(10)'%medianame' is media type '%mediaType'$k()
+					if (%G_hush->%debug) {debug -c info: $k(10)'%medianame' is media type '%mediaType'$k();}
 					# now run through the media library and find all entries with this media entry's base path and get the RHS of their paths
 					for (%n = 0; %n < @%arr_Library[]#; %n++)
 					{
@@ -5096,17 +5099,17 @@ class("hush::library","object")
 							# remove errthing after the supposed tv name
 							%tvName =~ s/\/.*//gi
 							# check if supposed TV Name has already been found add it to result array if its new
-							if (!$str.contains(@%tvFoundAlready, %tvName))
+							if ($str.contains(@%strTVFoundAlready, %tvName) == $false)
 							{
-								# add tvName to tvFoundAlready
-								@%tvFoundAlready <, %tvName
+								# add tvName to strTVFoundAlready
+								@%strTVFoundAlready <, %tvName
 								@%arr_TVShows <+ %tvName
 								%tCount++;
 		### dev debug mostly		if (%G_hush->%debug) debug -c info: adding alleged TV Show to tv array: %tvName
 							}
 						}
 					}
-					if (%G_hush->%debug) debug -c info: $k(10)found %tCount TV show titles within the @%arr_Library[]# entries in Hush Media Library$k()
+					if (%G_hush->%debug) {debug -c info: $k(10)New TV Titles found: %tCount | Total TV Titles: @%arr_TVShows[]# $k();}
 				}
 				else
 				{
@@ -5115,17 +5118,15 @@ class("hush::library","object")
 			}
 			else
 			{
-				if (%G_hush->%debug) debug -c Nope: libraryoptions->lviMediaEnrtries[%i] object class is not a listviewitem as expected.
+				if (%G_hush->%debug) {debug -c Nope: libraryoptions->lviMediaEnrtries[%i] object class is not a listviewitem as expected. Check that the libraryoptions object exists.;}
 			}
 		}
-		if (%success)
-		{
-			# return the number of items found to show success
-			$sort(@%arrTVShows)
-			return @%arr_TVShows[]#
-		}
-		if (%G_hush->%debug && %G_hush->%libraryoptions->%lviMediaEntries[]# == 0) debug -c Nope: no media library entries were found
-		return $false
+		
+		if (%G_hush->%debug && %G_hush->%libraryoptions->%lviMediaEntries[]# == 0) {debug -c Nope: No media library entries were found;}
+		
+		# return the number of items found to show success
+		$sort(@%arrTVShows)
+		return @%arr_TVShows[]#
 	}
 	
 	function buildTVSeasons()
@@ -5219,10 +5220,10 @@ class("hush::library","object")
 							# now remove the garbage from %movieName
 							%movieName =~ s/\.%garbage//i
 							# check if supposed Movie name has already been found add it to result array if it's new
-							if (!$str.contains(@%moviesFoundAlready, %movieName))
+							if ($str.contains(@%strMoviesFoundAlready, %movieName) == $false)
 							{
-								# add movieName to movieFoundAlready
-								@%moviesFoundAlready <, %movieName
+								# add movieName to strMovieFoundAlready
+								@%strMoviesFoundAlready <, %movieName
 								@%arr_Movies <+ %movieName
 								%tCount++;
 		### dev debug mostly		if (%G_hush->%debug) debug -c info: adding alleged Movie title to Movie array: %movieName
@@ -5247,7 +5248,7 @@ class("hush::library","object")
 							}
 						}
 					}
-					if (%G_hush->%debug) debug -c info: $k(12)found %tCount movie titles within @%arr_Library[]# entries in Hush Media Library$k()
+					if (%G_hush->%debug) debug -c info: $k(12)New Movie Titles found:  %tCount | Total Movie Titles: @%arr_Movies[]# movies. $k()
 				}
 				else
 				{
