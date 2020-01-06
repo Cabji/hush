@@ -115,7 +115,12 @@ event(OnDCCFileTransferSuccess,hushDCCEvent)
 			}
 		}
 	// logic: auto move file to media location
-		if (%G_hushOptions{"TransfersAutoMove"}) {xdcc::moveToLibrary %thisDL[0] %thisDL[1];}
+		if (%G_hushOptions{"TransfersAutoMove"}) 
+		{
+			xdcc::moveToLibrary %thisDL[0] %thisDL[1]
+			%G_hush->%library->$scanLibrary()
+		}
+	
 	// logic: auto update media centre clients
 		if (%G_hushOptions{"TransfersAutoMCUpdate"})
 		{
