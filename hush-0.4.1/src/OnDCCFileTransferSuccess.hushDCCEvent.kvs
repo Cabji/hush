@@ -65,6 +65,7 @@ event(OnDCCFileTransferSuccess,hushDCCEvent)
 		if (%G_hushOptions{"TransfersAutoEpUp"})
 		{
 			%tvInc = %G_hush->%searches->$epUp(%searchTerm)
+			# dev-note: the following for loop set any packs in the downloadHash that come _after_ thisDL to have "Previous Pack Completed" status so they don't get downloaded
 			for (%i = $(%di + 1); %i < $length(%G_hushDownloadHash{%searchTerm}); %i++)
 			{
 				%updateST = %G_hushDownloadHash{%searchTerm}[%i]->$getInfo(searchTerm)
@@ -73,12 +74,13 @@ event(OnDCCFileTransferSuccess,hushDCCEvent)
 				%G_hushDownloadHash{%searchTerm}[%i]->$setInfo(status,Previous Pack Completed)
 				%G_hushDownloadHash{%searchTerm}[%i]->$emit(infoUpdated,%updateDQNum,%updateST,%updateDI});
 			}
+			if (%tvInc != $false) {if (%G_hush->%debug) {debug -c Incremented the search episode in Searches to $k(12)%tvInc$k();}
 		}
 	
 	// logic: remove search term after successful transfer
 		if (%G_hushOptions{"TransfersRmSearchTerm"})
 		{
-		// logic: if this evals true (tv ep value didn't increment, or ep increment is turned off) it means we should remove the searchTerm
+		// logic: if (tv ep value didn't increment, or ep increment is turned off) then remove the searchTerm from Searches
 			if (%tvInc == $false)
 			{
 				if (%auto)
