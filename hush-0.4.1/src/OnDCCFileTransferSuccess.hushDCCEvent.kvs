@@ -74,7 +74,7 @@ event(OnDCCFileTransferSuccess,hushDCCEvent)
 				%G_hushDownloadHash{%searchTerm}[%i]->$setInfo(status,Previous Pack Completed)
 				%G_hushDownloadHash{%searchTerm}[%i]->$emit(infoUpdated,%updateDQNum,%updateST,%updateDI});
 			}
-			if (%tvInc != $false) {if (%G_hush->%debug) {debug -c Incremented the search episode in Searches to $k(12)%tvInc$k();}
+			if (%tvInc != $false) {if (%G_hush->%debug) {debug -c Incremented the search episode in Searches to $k(12)%tvInc$k();}}
 		}
 	
 	// logic: remove search term after successful transfer
@@ -154,3 +154,5 @@ event(OnDCCFileTransferSuccess,hushDCCEvent)
 	### Return ###
 }
 
+
+eventctl -d OnDCCFileTransferSuccess hushDCCEvent
