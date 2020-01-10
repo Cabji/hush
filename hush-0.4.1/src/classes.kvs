@@ -279,7 +279,7 @@ class("hush::searchesimport","widget")
 					%G_hush->%searchesImport->%lbResults->$clear();
 		
 					//dev-note: before this function runs, you should always update the library movies array and the permanent record array
-					if ($typeOf(%G_hush->%library) == object) {%G_hush->%library->$scanLibrary();}
+					if ($typeOf(%G_hush->%library) == hobject) {%G_hush->%library->$scanLibrary();}
 		
 					# fetch the content from the URL
 					http.asyncGet --auto-file-name --winctrl=h --existing-file-action=o -i=%urlType --clear (%url, $file.fixpath(%incoming\\hushSearchesImport.html))
