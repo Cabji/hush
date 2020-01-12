@@ -46,7 +46,7 @@ event(OnDCCSessionCreated,hushDCCEvent)
 		# if the filename is wrong OR (dcc port is 0 AND AutoStopPassive is on) we will stop this transfer immediately
 			
 		## Data Acquisition ##
-		%G_hushLive{"iTransfersActive"}--;
+		if (%G_hushLive{"iTransfersActive"} > 0) {%G_hushLive{"iTransfersActive"}--;} else {%G_hushLive{"iTransfersActive"} = 0;}
 	
 		# Function Execution #
 		msg $dcc.remoteNick($0) XDCC CANCEL
