@@ -15,7 +15,7 @@ event(OnDCCFileTransferBegin,hushDCCEvent)
 	
 		## Function Execution ##
 		%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$setInfo(status, Receiving)
-		if (%speak) {%G_hush->$doFCW(); echo -w=$window(%G_hushOptions{"FCW"}) $k(8)Transfer Started$k() - $k(12)$dcc.remoteFileName($0)$k is being sent. Wrong File? $cr![!rbt]xdcc::hilightsClick $dcc.ircContext($0) \"%G_hushOptions{"FCW"}\" CANCEL $dcc.remoteNick($0) $dcc.remoteFileName($0) %G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(packNum) %G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(packGets) %G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(packSize) %thisDL[0] %thisDL[1] \[$cr()$k(10)CANCEL$k()$cr()\];}
+		if (%speak) {%G_hush->$doFCW(); echo -w=$window(%G_hushOptions{"FCW"}) $k(8)Transfer Started$k() - $k(12)$dcc.remoteFileName($0)$k is being sent. Wrong File? [$cr![!rbt]xdcc::hilightsClick $dcc.ircContext($0) \"%G_hushOptions{"FCW"}\" CANCEL $dcc.remoteNick($0) $dcc.remoteFileName($0) %G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(packNum) %G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(packGets) %G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$getInfo(packSize) %thisDL[0] %thisDL[1] \[$cr()$k(10)CANCEL$k()$cr()\];}
 		// start the update timer for this xdccobject
 		%G_hushDownloadHash{"%thisDL[0]"}[%thisDL[1]]->$timerUpdateInfo($true,%thisDL[0]|||%thisDL[1])
 	}
