@@ -3219,7 +3219,7 @@ class("hush::main","widget")
 	function getDownloadInfoArray(returns an array of $0 values from xdccobject->%info{$0} if $1 matches $2)
 	{
 		/* This function will return an array of values from the hushdownloadHash
-		'info bit' - an object member of the xdccobject. see xdccobject class constructor for info bit names
+		'info bit' - a member of the xdccobject class. see xdccobject class constructor for info bit names
 		This function: 
 		 checks for existence of $1 info bit, if it exists
 		 checks if the _value_ of the $1 info bit is contained in $2 (you can compare an array or csv string of values), if $2 contains $1 info bit's _value_
@@ -4122,7 +4122,7 @@ class("hush::main","widget")
 		# build the active search terms array because transfer status just changed
 		
 		# fetch which searchTerms in the downloadHash have an active item
-		%activeStatuses = $array(Requested,Receiving,Downloading,Connecting)
+		%activeStatuses = $array(Requested,Receiving,Downloading,Connecting,"Waiting (RQ)")
 		%G_hush->%activeSearchTerms = %G_hush->$getDownloadInfoArray(searchTerm,status,%activeStatuses)
 	}
 	
@@ -5651,7 +5651,7 @@ class("hush::common","object")
 				%n++
 			}
 		}
-		%success = %temp
+		if (%temp == $true) {%success = %temp;}
 		
 		return %success
 	}
@@ -5817,35 +5817,42 @@ class("hush::common","object")
 		%return = $false
 		
 		
-		// A iterative binary search function. It returns 
+		// A binary search function. It returns 
 		// location of x in given array arr[l..r] if present, 
 		// otherwise -1 
 		
-		if (%string && $typeOf(%array) == array)
+		if (%string == $true)
 		{
-			%l = 0
-			%r = $(%array[]#)
-			while (%l <= %r)
-			{ 
-				%m = $(%l + (%r - %l) / 2); 
-				if ($str.match(%string,%array[%m],%matchMod,%caseSense))
-				{
-					switch(%flag)
+			if ($typeOf(%array) == array)
+			{
+				%l = 0
+				%r = $(%array[]#)
+				while (%l <= %r)
+				{ 
+					%m = $(%l + (%r - %l) / 2); 
+					if ($str.match(%string,%array[%m],%matchMod,%caseSense))
 					{
-						case(value):
-						%return = %array[%m];
-						break;
-						default:
-						%return = %m;
-						break;
-					}
-				}  
-				if (%array[%m] < %string) {%l = $(%m + 1);}
-				else {%r = $(%m - 1);}
+						switch(%flag)
+						{
+							case(value):
+							%return = %array[%m];
+							break;
+							default:
+							%return = %m;
+							break;
+						}
+					}  
+					if (%array[%m] < %string) {%l = $(%m + 1);}
+					else {%r = $(%m - 1);}
+				}
 			}
-			// if we reach here, then element was not found
-			return %return;
+			else
+			{
+				if (%G_hush->%debug == $true) {debug -c "typeOf(array) <- (arg 1) was not an array! typeOf was: $typeOf(%array)\n	check data and try again";}
+			}
 		}
+		// if we reach here, then element was not found
+		return %return;
 	}
 	
 }

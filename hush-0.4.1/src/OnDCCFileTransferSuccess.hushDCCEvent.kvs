@@ -154,5 +154,3 @@ event(OnDCCFileTransferSuccess,hushDCCEvent)
 	### Return ###
 }
 
-
-eventctl -d OnDCCFileTransferSuccess hushDCCEvent

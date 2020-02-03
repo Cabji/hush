@@ -94,11 +94,11 @@ event(OnDCCFileTransferFailed,hushDCCEvent)
 		}
 		else
 		{
-	// logic: this transfer was a passive transfer
+	// logic: this transfer was a pdcc transfer
 			if (%G_hush->%debug) {debug -c Download reference %st|||%di was a passive DCC and it's cancellation has already been handled by Hush.;}
-			# build the active search terms array because transfer status just changed
-			%G_hush->$buildActiveSearchTermArray();
 		}
+		# build the active search terms array because transfer status just changed
+		%G_hush->$buildActiveSearchTermArray();
 		%G_hushDownloadHash{%st}[%di]->$updateInfo()
 		
 	
