@@ -5,17 +5,16 @@ Hush is XDCC search and downloading software.
 Where can you get Hush?
 
 The official website for Hush is http://hush.getenjoyment.net/
-The official eepsite for Hush is http://hush.i2p/
-New releases are uploaded to the eepsite.
+New releases are uploaded to the website.
 
 You can also download Hush from alexzulu's repo: http://kvirc.alexzulu.ru/
 The repo may not always have the latest version.
 
 Which version should you use?
 
-The best release to use is the latest release (at time of writing v0.3.9) for Windows OS users. 
-For Linux users, 0.3.5 onward should work but it is completely untested. v0.3.3 should work fine on Linux 
-but it will use a lot of CPU if you have a lot of passive search terms.
+The best release to use is the latest release (at time of writing v0.4.1) for Windows OS users. 
+I haven't developed or tested for Linux for a long time, and I know at least the automatic moving 
+of files into library locations hasn't been written for Linux so that probably won't work.
 
 --- Upgrading ---
 

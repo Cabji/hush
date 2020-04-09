@@ -385,7 +385,7 @@ class("hush::searchesimport","widget")
 						{
 							if (%G_hush->%debug) {debug -c Search Import Automated Acquisition is on, and the fetchResults callback run will automatically try to add titles to the Searches list.;}
 							if (%G_hush->%debug) {debug -c fetchResults::callback: Number of titles found: %success;}
-							# dev-note: the following call must use absolute resolution to the function call because we can be calling this code form a callback scope
+							# dev-note: the following call must use absolute resolution to the function call because we can be calling this code from a callback scope
 							%G_hush->%searchesImport->$addToSearches();
 							%G_hush->%searchesImport->%lblStatusLeft->$setText("");
 							%G_hush->%searchesImport->%lblStatusRight->$setText("");
@@ -617,6 +617,8 @@ class("hush::searchesimport","widget")
 						# add to hush searches array
 						%G_hushSearches[%G_hushSearches[]#] = %title
 						if (%G_hush->%debug) {debug -c adding $k(8)%title$k() to the Searches list;}
+						# add title to the autoSearchesLog hash
+						%G_hush->%hashAutoSearchesLog{%title} = $unixtime()
 						%counterTitlesAdded++
 						%success = %counterTitlesAdded
 					}
@@ -643,6 +645,8 @@ class("hush::searchesimport","widget")
 			@%lbResults->$setCurrentItem(0)
 			# sort hush searches array
 			%G_hushSearches = $sort(%G_hushSearches)
+			# save the autoSearchesLog hash to disk if this was an auto import
+			if (%G_hush->%searchImportsAutoFlag == $true) {%G_hush->$configSave(%G_hush->%hushConfig, autoSearchesLog, %G_hush->%hashAutoSearchesLog);}
 		}
 		else
 		{
@@ -2186,6 +2190,16 @@ class("hush::options","widget")
 		@%chbSearchImportsObeyPermRecord = $new(checkbox, @%wgtPageSearching)
 		@%chbSearchImportsObeyPermRecord->$setText("Don't search for stuff I've had before")
 		@%chbSearchImportsObeyPermRecord->$setToolTip("Toggles whether the Searches Import feature will compare new titles against the Permanent Record.<br/><br/>The Permanent Record holds the title names of all movies you have had on your disk drive since using Hush.<br/><br/>If you tick this option, even if you delete a movie file from disk drive, Hush will not add it as a passive search entry through its Searches Import feature.<br/><br/>The idea of this option is so you can delete watched Movies to free up disk space and not have them redownloaded by the automated systems of Hush.")
+		# automated searches will be purged after this much time 
+		@%lblSearchImportsAutoPurge = $new(label, @%wgtPageSearching)
+		@%lblSearchImportsAutoPurge->$setText("Auto-grabbed movie searches expire after: ")
+		@%lblSearchImportsAutoPurge->$setToolTip("If Hush automatically searches for popular movies, it logs when it adds the search entry for the movie title.<br/>If the movie is not found after the amount of time set here, Hush will stop searching for the movie.<br/>If the value is set to 0, Hush will never delete auto-acquired movie searches. Recommended value: 365 days")
+		@%sbSearchImportsAutoPurge = $new(spinbox, @%wgtPageSearching)
+		@%sbSearchImportsAutoPurge->$setMinValue(0)
+		@%sbSearchImportsAutoPurge->$setMaxValue(730)
+		@%sbSearchImportsAutoPurge->$setValue(365)
+		@%sbSearchImportsAutoPurge->$setSuffix(" days")
+		@%sbSearchImportsAutoPurge->$setLineStep(7)
 		# max buffer time widgets
 		@%lblISMaxTime = $new(label, @%wgtPageSearching)
 		@%lblISMaxTime->$setText("Database Buffer: ")
@@ -2200,7 +2214,7 @@ class("hush::options","widget")
 		@%lblISWriteSize = $new(label, @%wgtPageSearching)
 		@%lblISWriteSize->$setText("Write Buffer: ")
 		@%lblISWriteSize->$setToolTip("Hush will write announce data to the database after this many announces are caught.<br/>The bigger this value, the longer it takes for announces to be searchable and disk writing will be less frequent.<br/>If you are watching many channels, increase this. If watching few channels, decrease this.<br/>Recommended values<ul><li>1-2 channels: 100</li><li>3-4 channels: 250</li><li>5+ channels: 500")
-		@%sbISWriteSize = $new(spinbox)
+		@%sbISWriteSize = $new(spinbox, @%wgtPageSearching)
 		@%sbISWriteSize->$setMinValue(50)
 		@%sbISWriteSize->$setMaxValue(10000)
 		@%sbISWriteSize->$setValue(1024)
@@ -3671,6 +3685,7 @@ class("hush::main","widget")
 		@%debug = $true
 		@%downloadOrder = $array
 		@%hashAutoDownload = $null
+		@%hashAutoSearchesLog = $hash()
 		@%hushChannelPriority = $file.localdir("config/Hush/channelPriority.conf")
 		@%hushConfig = $file.localdir("config/Hush/hush.conf")
 		@%hushDatabase = $file.localdir("config/Hush/hushdb.sqlite")
@@ -3681,7 +3696,7 @@ class("hush::main","widget")
 		@%ircContexts = $null
 		@%scriptName = "Hush"
 		@%searchImportsAutoFlag = $false
-		@%version = "0.4.1"
+		@%version = "0.4.2"
 		
 		# database stuff must come after the member property declarations
 		@$dbCreate();
@@ -3695,6 +3710,7 @@ class("hush::main","widget")
 		%G_hushOptions = @$configLoad(@%hushConfig, options, hash)
 		%G_hushDownloadHash = $hash
 		@%arrayBotsNoSSL = @$configLoad(@%hushConfig, botsNoSSL)
+		@%hashAutoSearchesLog = @$configLoad(@%hushConfig, autoSearchesLog, hash)
 		
 		# hush live values
 		# TransfersActive is an integer that tells us how many active transfers Hush has going
@@ -3810,6 +3826,7 @@ class("hush::main","widget")
 			@$configSave(@%hushConfig, options, %G_hushOptions)
 			@$configSave(@%hushConfig, channels, %G_hushWatchChannels)
 			@$configSave(@%hushConfig, botsNoSSL, %G_hush->%arrayBotsNoSSL)
+			@$configSave(@%hushConfig, autoSearchesLog, %G_hush->%hashAutoSearchesLog)
 		}
 		
 		# instant search query box gains focus
