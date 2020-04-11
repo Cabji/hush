@@ -605,11 +605,11 @@ class("hush::searchesimport","widget")
 						}
 					}
 					# check if the current new title matches any entries in hushSearches array, library array or permanent record array
-					if (%keep) {if ($str.grep($str.replace(%temp," ",*),%G_hush->%library->%arr_Movies,w)) {%keep = $false; %counterMovies++;}}
-					if (%keep) {if ($str.grep($str.replace(%temp," ",*),%G_hushSearches,w)) {%keep = $false; %counterSearches++;}}
-					if (%keep && %G_hushOptions{"SearchImportsObeyPermRecord"}) {if ($str.grep($str.replace(%temp," ",*),%G_hush->%library->%moviesPermRecord,w)) {%keep = $false; %counterPerm++;}}
+					if (%keep == $true) {if ($str.grep($str.replace(%temp," ",*),%G_hush->%library->%arr_Movies,w) == $true) {%keep = $false; %counterMovies++;}}
+					if (%keep == $true) {if ($str.grep($str.replace(%temp," ",*),%G_hushSearches,w) == $true) {%keep = $false; %counterSearches++;}}
+					if (%keep == $true && %G_hushOptions{"SearchImportsObeyPermRecord"} == $true) {if ($str.grep($str.replace(%temp," ",*),%G_hush->%library->%moviesPermRecord,w) == $true) {%keep = $false; %counterPerm++;}}
 		
-					if (%keep) 
+					if (%keep == $true) 
 					{
 						# advance to next level of flow
 						# prepend and append title
@@ -2251,6 +2251,8 @@ class("hush::options","widget")
 		else {@%chbSearchImportsAutoToggle->$setChecked($true);}
 		if (%G_hushOptions{"SearchImportsObeyPermRecord"} != "") {@%chbSearchImportsObeyPermRecord->$setChecked(%G_hushOptions{"SearchImportsObeyPermRecord"});}
 		else {@%chbSearchImportsObeyPermRecord->$setChecked($true);}
+		if (%G_hushOptions{"SearchImportsAutoPurge"} != "") {@%sbSearchImportsAutoPurge->$setValue(%G_hushOptions{"SearchImportsAutoPurge"});}
+		else {@%sbSearchImportsAutoPurge->$setValue(365);}
 		if (%G_hushOptions{"ISMaxTime"} != "") {@%sbISMaxTime->$setValue(%G_hushOptions{"ISMaxTime"});}
 		else {@%sbISMaxTime->$setValue(60);}
 		if (%G_hushOptions{"ISPSFreq"} != "") {@%sbISPSFreq->$setValue(%G_hushOptions{"ISPSFreq"});}
@@ -2264,14 +2266,16 @@ class("hush::options","widget")
 		@%lPageIS->$addMultiCellWidget(@%chbISObeySE, 2,2,0,1)
 		@%lPageIS->$addMultiCellWidget(@%chbSearchImportsAutoToggle, 3,3,0,1)
 		@%lPageIS->$addMultiCellWidget(@%chbSearchImportsObeyPermRecord, 4,4,0,1)
-		@%lPageIS->$addMultiCellWidget(@%lblISMaxTime, 5,5,0,0)
-		@%lPageIS->$addMultiCellWidget(@%sbISMaxTime, 5,5,1,1)
-		@%lPageIS->$addMultiCellWidget(@%lblISWriteSize, 6,6,0,0)
-		@%lPageIS->$addMultiCellWidget(@%sbISWriteSize, 6,6,1,1)
-		@%lPageIS->$addMultiCellWidget(@%lblISPSFreq, 7,7,0,0)
-		@%lPageIS->$addMultiCellWidget(@%sbISPSFreq, 7,7,1,1)
-		@%lPageIS->$addMultiCellWidget(@%btnISPSNow, 8,8,0,1)
-		@%lPageIS->$addMultiCellWidget(@%btnISReset, 9,9,0,1)
+		@%lPageIS->$addMultiCellWidget(@%lblSearchImportsAutoPurge, 5,5,0,0)
+		@%lPageIS->$addMultiCellWidget(@%sbSearchImportsAutoPurge, 5,5,1,1)
+		@%lPageIS->$addMultiCellWidget(@%lblISMaxTime, 6,6,0,0)
+		@%lPageIS->$addMultiCellWidget(@%sbISMaxTime, 6,6,1,1)
+		@%lPageIS->$addMultiCellWidget(@%lblISWriteSize, 7,7,0,0)
+		@%lPageIS->$addMultiCellWidget(@%sbISWriteSize, 7,7,1,1)
+		@%lPageIS->$addMultiCellWidget(@%lblISPSFreq, 8,8,0,0)
+		@%lPageIS->$addMultiCellWidget(@%sbISPSFreq, 8,8,1,1)
+		@%lPageIS->$addMultiCellWidget(@%btnISPSNow, 9,9,0,1)
+		@%lPageIS->$addMultiCellWidget(@%btnISReset, 10,10,0,1)
 		
 		### Media Centre Tab ###
 		@%wgtPageMediaCentre = $new(widget, , "options Media Centre Widget for tab")
@@ -2369,6 +2373,7 @@ class("hush::options","widget")
 			%G_hushOptions{"ISPSFreq"} = @%sbISPSFreq->$value()
 			%G_hushOptions{"ISWriteSize"} = @%sbISWriteSize->$value()
 			%G_hushOptions{"NoiseNone"} = @%cbNoiseNone->$isChecked()
+			%G_hushOptions{"SearchImportsAutoPurge"} = @%sbSearchImportsAutoPurge->$value()
 			%G_hushOptions{"SearchImportsAutoToggle"} = @%chbSearchImportsAutoToggle->$isChecked()
 			%G_hushOptions{"SearchImportsObeyPermRecord"} = @%chbSearchImportsObeyPermRecord->$isChecked()
 			%G_hushOptions{"SWC"} = @%cbSWC->$isChecked()
@@ -2648,6 +2653,72 @@ class("hush::main","widget")
 		echo "Toolbar: hushMain"
 		toolbar.destroy hushMain
 		echo "Uninstall finished."
+	}
+	
+	function timerSearchImportsAutoPurge(periodically checks if any auto acquired Searches need to be removed from the Searches array)
+	{
+		/* this function creates a timer that periodically checks if auto acquired Searches in the searches array need removing
+			
+			timerSearchImportsAutoPurge()
+		
+			NOTE: this timer is only activated in Events -> onKVIrcStartup::hush
+		*/
+		
+		# interval: 60000 = 1 minute
+		%interval = $(60000 * 60 * 24)
+		# ^^^ this is set to once every 1 day
+		
+		timer (hushSearchImportsAutoPurge, %interval)
+		{
+			%debugMsg = "DEBUG timer callback: $k(12)hushSearchImportsAutoPurge$k()";
+			%debugMsg .= "hushSearchImportsAutoPurge: Timer shot triggered."
+			if ($isSet(%G_hushSearches) && $isSet(%G_hush->%hashAutoSearchesLog))
+			{
+				// get the max period of time we allow an auto acquired Search entry to remain
+				// the SearchImportsAutoPurge value is multiplied by 86400 because the setting value is in 'days' and there are 86400 seconds/day
+				%maxDuration = $(%G_hushOptions{"SearchImportsAutoPurge"} * 86400)
+				%intRemoved = 0
+				%intKept = 0
+		 		%intTotal = 0
+		
+				// only run the code if the purge duration setting is greater than 0
+				if (%maxDuration > 0)
+				{
+					// loop through G_hush->hashAutoSearchLog and find any entries that have been in the system for too long
+					foreach (%st, $keys(%G_hush->%hashAutoSearchesLog))
+					{
+						// compare st + maxDuration against NOW to see if st has expired
+						if ($(%G_hush->%hashAutoSearchesLog{%st} + %maxDuration) <= $unixtime())
+						{
+							// st has expired, so remove it from G_hushSearches and from G_hush->hashAutoSearchLog
+							%i = %G_hush->%common->$fnArrayBinarySearch(%st, %G_hushSearches)
+							if (%i >= 0)
+							{
+								%G_hushSearches[%i] = $null
+								%G_hush->%hashAutoSearchesLog{%st} = $null
+								%intRemoved++
+								if (%G_hush->%debug == $true) {debug -c $k(8)%st$k() has been in Searches for too long so removing it;}
+							}
+						}
+						else
+						{
+							// st is still valid for now
+							%intKept++
+						}
+						%intTotal++
+					}
+					// remove empty entries from %G_hushSearches
+					%G_hushSearches = %G_hush->%common->$fnArrayRemoveEmptyValues(%G_hushSearches)
+				}
+				// output some debug stats 
+				if (%G_hush->%debug == $true && %intTotal > 0) {debug -c $b()Search Import Auto Purge Stats$b()\n  Total Processed: %intTotal\n  Removed: %intRemoved\n  Kept: %intKept;}
+				if (%G_hush->%debug == $true && %intTotal == 0) {debug -c Search Import Purge did not happen because user has expiration duration set to 0.;}
+			}
+			else
+			{
+				if (%G_hush->%debug == $true) {debug -c G_hushSearches or G_hush->hashAutoSearchesLog doesn't exist. Check data and try again.;}
+			}
+		}
 	}
 	
 	function timerSearchImportsAutoAcquisition(timer that automatically acquires movie titles for the searches list)
@@ -3698,10 +3769,6 @@ class("hush::main","widget")
 		@%searchImportsAutoFlag = $false
 		@%version = "0.4.2"
 		
-		# database stuff must come after the member property declarations
-		@$dbCreate();
-		@$dbConnect();							# dev note: @%sql is created in $dbCreate
-		
 		# load config from disk if available
 		if (@%debug) {debug -c reading settings from @%hushConfig;}
 		%G_hushWatchChannels = @$configLoad(@%hushConfig, channels)
@@ -3711,6 +3778,10 @@ class("hush::main","widget")
 		%G_hushDownloadHash = $hash
 		@%arrayBotsNoSSL = @$configLoad(@%hushConfig, botsNoSSL)
 		@%hashAutoSearchesLog = @$configLoad(@%hushConfig, autoSearchesLog, hash)
+		
+		# database stuff must come after the member property declarations
+		@$dbCreate();
+		@$dbConnect();							# dev note: @%sql is created in $dbCreate
 		
 		# hush live values
 		# TransfersActive is an integer that tells us how many active transfers Hush has going
@@ -5448,7 +5519,7 @@ class("hush::instantsearch","widget")
 		@%lvIS->$setSortingEnabled($true)
 		# populate listview columns, pull the column names from the database and put them into an array
 		if (%G_hush->%sql->$className != sql)
-			if (!%G_hush->$dbConnect())
+			if (%G_hush->$dbConnect() == $false)
 				halt;
 		%colNames = %G_hush->%common->$fnDBColsToArray(%G_hush->%sql, instant)
 		for (%i = 0; %i < %colNames[]#; %i++)
@@ -5806,6 +5877,8 @@ class("hush::common","object")
 		/* This function will binary search an array's values and return a result depending on the flag parameter
 		
 			YOU MUST PASS THIS FUNCTION A SORTED ARRAY FOR IT TO WORK CORRECTLY
+		
+		$fnArrayBinarySearch(<string:find>, <array:search>, [string:returnFlag], [string:matchModifier], [bool:caseSens])
 		
 		$0 - (string) string: the token to search for
 		$1 - (array) array: the array to search

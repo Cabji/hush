@@ -6,18 +6,20 @@ event(OnKVIrcStartup,hush)
 	
 	%G_hush = $new(hush::main, 0, hushMain)
 	# create child objects/widgets
-	%G_hush->%channels = $new(hush::channels, 0, "Hush Channels Widget")
-	%G_hush->%common = $new(hush::common, 0, "Hush Common Functions")
-	%G_hush->%instantsearch = $new(hush::instantsearch, 0, "Hush Instant Search Widget")
-	%G_hush->%library = $new(hush::library, 0, "Hush Library Object")
-	%G_hush->%libraryoptions = $new(hush::libraryoptions, 0, "Hush Library Widget")
-	%G_hush->%options = $new(hush::options, 0, "Hush Options Widget")
-	%G_hush->%queueeditor = $new(hush::queueeditor, 0, "Hush Download Queue Widget")
-	%G_hush->%searches = $new(hush::searches, 0, "Hush Searches Widget")
-	%G_hush->%searchesImport = $new(hush::searchesimport, 0, "Hush Searches Import Widget")
+	%G_hush->%channels 		= $new(hush::channels, 		0, "Hush Channels Widget")
+	%G_hush->%common 		= $new(hush::common, 			0, "Hush Common Functions")
+	%G_hush->%instantsearch 	= $new(hush::instantsearch, 	0, "Hush Instant Search Widget")
+	%G_hush->%library 		= $new(hush::library, 		0, "Hush Library Object")
+	%G_hush->%libraryoptions 	= $new(hush::libraryoptions, 	0, "Hush Library Widget")
+	%G_hush->%options 		= $new(hush::options, 		0, "Hush Options Widget")
+	%G_hush->%queueeditor 	= $new(hush::queueeditor, 		0, "Hush Download Queue Widget")
+	%G_hush->%searches 		= $new(hush::searches, 		0, "Hush Searches Widget")
+	%G_hush->%searchesImport 	= $new(hush::searchesimport, 	0, "Hush Searches Import Widget")
 	
 	%G_hush->%library->$scanLibrary()
 	%G_hush->$buildPSQuery()
+	
+	// activate timers
 	if (%G_hushOptions{"ISPSToggle"})	{%G_hush->$timerPassiveSearch();}
 	if (%G_hushOptions{"SearchImportsAutoToggle"})
 	{
@@ -29,5 +31,9 @@ event(OnKVIrcStartup,hush)
 		if (%G_hush->%debug) {debug -c Doing a one-shot automatic movie title fetch on start up...;}
 		%G_hush->%searchesImport->$fetchResults("https://imdb.com/calendar","IMDB Calendar")
 	}
+	%G_hush->$timerSearchImportsAutoPurge()
+	
+	# enable event handlers to ensure Hush operates correctly.
+	eventctl -e OnQueryNotice hushErrorHandler
 }
 
