@@ -2665,8 +2665,8 @@ class("hush::main","widget")
 		*/
 		
 		# interval: 60000 = 1 minute
-		%interval = $(60000 * 60 * 24)
-		# ^^^ this is set to once every 1 day
+		%interval = $(60000 * 60 * 12)
+		# ^^^ this is set to twice every day (12 hours)
 		
 		timer (hushSearchImportsAutoPurge, %interval)
 		{
@@ -2719,6 +2719,7 @@ class("hush::main","widget")
 				if (%G_hush->%debug == $true) {debug -c G_hushSearches or G_hush->hashAutoSearchesLog doesn't exist. Check data and try again.;}
 			}
 		}
+		if (%G_hush->%debug) {debug -c timer 'hushSearchImportsAutoPurge' activated to fire on interval of %interval milliseconds\nUse: /listtimers to see timer info;}
 	}
 	
 	function timerSearchImportsAutoAcquisition(timer that automatically acquires movie titles for the searches list)
