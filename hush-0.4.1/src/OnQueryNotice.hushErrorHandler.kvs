@@ -39,7 +39,7 @@ event(OnQueryNotice,hushErrorHandler)
 		}
 	
 	# handles xdcc denied (usually a problem with not being on particular channels to get transfers)
-		if ($str.contains($3,$str.stripcolors("** XDCC SEND denied")))
+		if ($str.contains($str.stripcolors($3), "** XDCC SEND denied"))
 		{
 			%cancel = $true
 			%fcwMsg = $b()Info:$b() Transfer from $k(5)%nick$k() was cancelled. Reason: $3
@@ -47,14 +47,14 @@ event(OnQueryNotice,hushErrorHandler)
 		}
 	
 	# handles all slots full on bot (remotely queued)
-		if ($str.contains($3,$str.stripcolors("All Slots Full")))
+		if ($str.contains($str.stripcolors($3), "All Slots Full"))
 		{
 			%fcwMsg = $k(5)%nick$k() said you have been placed in their remote queue, the pack will send as soon as possible.;
 			%pStatus = "Waiting (RQ)"
 		}
 	
 	# handles bot being 'offline' which means the bot's sending is turned off, not literally offline. that is handled in RAW 401 handler
-		if ($str.contains($3,$str.stripcolors("bot is not online")))
+		if ($str.contains($str.stripcolors($3),"bot is not online"))
 		{
 			%cancel = $true
 			%fcwMsg = $b()Nope!$b() $k(5)%nick$k() is not sending stuff at the moment. It is what it is.;
@@ -62,21 +62,21 @@ event(OnQueryNotice,hushErrorHandler)
 		}
 	
 	# handles if you request the same item twice and it's already remotely queued (do we need to alter this?)
-		if ($str.contains($3 ,$str.stripcolors("** All Slots Full, Denied, You already have that item queued.")))
+		if ($str.contains($str.stripcolors($3), "** All Slots Full, Denied, You already have that item queued."))
 		{
 			%fcwMsg = $b()Info:$b() You are already remotely queued for that pack from $k(5)%nick$k();
 			%pStatus = "Waiting (RQ)"
 		}
 	
 	# handles being added to remote queue
-		if ($str.contains($3 ,$str.stripcolors("Added you to the main queue")))
+		if ($str.contains($str.stripcolors($3) ,"Added you to the main queue"))
 		{
 			%fcwMsg = $b()Info:$b() $k(5)%nick$k() added you to its remote queue. Message recieved: $3;
 			%pStatus = "Waiting (RQ)"
 		}
 	
 	# handles message about how long you've been remotely queued for
-		if ($str.contains($3 ,$str.stripcolors("or less remaining")))
+		if ($str.contains($str.stripcolors($3) ,"or less remaining"))
 		{
 			# output info to user
 			%parts = $str.split(\", $3)
@@ -91,7 +91,7 @@ event(OnQueryNotice,hushErrorHandler)
 		}
 	
 	# handles if you get removed from the remote queue
-		if ($str.contains($3 ,$str.stripcolors("Removed you from the queue for")))
+		if ($str.contains($str.stripcolors($3) ,"Removed you from the queue for"))
 		{
 			%cancel = $true
 			%fcwMsg = $b()Info:$b() $k(5)%nick$k() removed you from its remote queue. Message recieved: $3\nMoving onto next locally queued download (if any)...;
@@ -99,7 +99,7 @@ event(OnQueryNotice,hushErrorHandler)
 		}
 	
 	# handles feedback from bot - canceled by user
-		if ($str.contains($3 ,$str.stripcolors("** Closing Connection: Transfer canceled by user")))
+		if ($str.contains($str.stripcolors($3) ,"** Closing Connection: Transfer canceled by user"))
 		{
 			%cancel = $true
 			%fcwMsg = $b()Info:$b() Transfer from $k(5)%nick$k() was cancelled.
@@ -107,7 +107,7 @@ event(OnQueryNotice,hushErrorHandler)
 		}
 	
 	# handles feedback from bot - dcc timeout
-		if ($str.contains($3 ,$str.stripcolors("** Closing Connection: DCC Timeout")))
+		if ($str.contains($str.stripcolors($3) ,"** Closing Connection: DCC Timeout"))
 		{
 			%cancel = $true
 			%fcwMsg = $b()Info:$b() Transfer from $k(5)%nick$k() was cancelled due to a timeout.
@@ -115,7 +115,7 @@ event(OnQueryNotice,hushErrorHandler)
 		}
 	
 	# handles feedback from bot - transfer complete
-		if ($str.contains($3 ,$str.stripcolors("Transfer Completed")))
+		if ($str.contains($str.stripcolors($3) ,"Transfer Completed"))
 		{
 			# nothing needs to happen for this onQuery, but we want to catch it anyway to stop generic debug messages
 			if (%G_hush->%debug) {debug -c $k()Transfer from $k(5)%nick$k() completed. No further action required.;}
@@ -124,11 +124,11 @@ event(OnQueryNotice,hushErrorHandler)
 	
 	# below is the common code that updates the xdccobject in the downloadHash
 		%thisDL = %G_hush->$searchDownloadHashForBot($0,"Requested")
-		if (!%thisDL)
+		if (%thisDL == $false)
 		{
 			%thisDL = %G_hush->$searchDownloadHashForBot($0,"Waiting (RQ)")
 		}
-		if (%thisDL)
+		if (%thisDL == $true)
 		{
 			%thisDL = $str.split(|||,%thisDL,2)
 			if ($isSet(%thisDL[1]))
@@ -140,16 +140,16 @@ event(OnQueryNotice,hushErrorHandler)
 				{
 					%G_hushLive{"iTransfersActive"}--;
 					%G_hushDownloadHash{%st}[%di]->$setInfo(status,%pStatus)
-					%averageSpeed = %G_hushDownloadHash{%st}[%di]->$getInfo(averageSpeed)
-					%ic = %G_hushDownloadHash{%st}[%di]->$getInfo(ircContext)
-					%bName = %G_hushDownloadHash{%st}[%di]->$getInfo(botName)
-					%channelName = %G_hushDownloadHash{%st}[%di]->$getInfo(channelName)
-					%networkname = %G_hushDownloadHash{%st}[%di]->$getInfo(networkName)
-					%pName = %G_hushDownloadHash{%st}[%di]->$getInfo(packName)
-					%pNum = %G_hushDownloadHash{%st}[%di]->$getInfo(packNum)
-					%pGets = %G_hushDownloadHash{%st}[%di]->$getInfo(packGets)
-					%pSize = %G_hushDownloadHash{%st}[%di]->$getInfo(packSize)
-					%st = %G_hushDownloadHash{%st}[%di]->$getInfo(searchTerm)
+					%averageSpeed	= %G_hushDownloadHash{%st}[%di]->$getInfo(averageSpeed)
+					%ic			= %G_hushDownloadHash{%st}[%di]->$getInfo(ircContext)
+					%bName		= %G_hushDownloadHash{%st}[%di]->$getInfo(botName)
+					%channelName	= %G_hushDownloadHash{%st}[%di]->$getInfo(channelName)
+					%networkname	= %G_hushDownloadHash{%st}[%di]->$getInfo(networkName)
+					%pName		= %G_hushDownloadHash{%st}[%di]->$getInfo(packName)
+					%pNum			= %G_hushDownloadHash{%st}[%di]->$getInfo(packNum)
+					%pGets		= %G_hushDownloadHash{%st}[%di]->$getInfo(packGets)
+					%pSize		= %G_hushDownloadHash{%st}[%di]->$getInfo(packSize)
+					%st			= %G_hushDownloadHash{%st}[%di]->$getInfo(searchTerm)
 	
 					%aSTi = $false
 					# deactivate this searchTerm in the activeSearchTerms array
