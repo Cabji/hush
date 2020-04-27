@@ -3505,7 +3505,6 @@ class("hush::main","widget")
 				{
 					%G_hush->$doFCW(); 
 					echo -w=$window(%G_hushOptions{"FCW"}) %fcwMsg; 
-					echo -w=$window(%G_hushOptions{"FCW"}) This was in hush::doPassiveSearch - speak = %speak;
 				}
 				%queryUpsert = $str.chop(%queryUpsert,1)";"
 				if (%G_hush->%sql->$queryExec(%queryUpsert))
