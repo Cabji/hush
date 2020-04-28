@@ -2820,6 +2820,54 @@ class("hush::main","widget")
 		}
 	}
 	
+	function timerAutoDownloadsAutoPurge(this function defines a timer that checks for files that were auto downloaded that are over the auto purge time limit)
+	{
+		/* this function defines a timer that checks for files that were auto downloaded that are over the auto purge time limit
+			
+			timerAutoDownloadsAutoPurge()
+		
+		*/
+		
+		# interval: 60000 = 1 minute
+		%interval = $(60000 * 60 * 12)
+		# ^^^ this is set to twice every day (12 hours)
+		
+		timer (hushAutoDownloadsAutoPurge, %interval)
+		{
+			
+		}
+		
+		// during testing, the callback code will be executed here
+		// first, find a way to filter which items in @%hashAutoDownloadsLog are over the time limit
+		%maxTime = 60000
+		%arrPurgeFiles = $array()
+		
+		foreach (%filename,$keys(@%hashAutoDownloadsLog))
+		{
+			if ($(@%hashAutoDownloadsLog{%filename} + %maxTime) < $unixtime())
+			{
+				%arrPurgeFiles <+ %filename
+			}
+		}
+		
+		if (%arrPurgeFiles[]# > 0)
+		{
+			// look for these filenames in the media library arrays (TV and/or Movies) to find if they exist still and where they are located on disk
+			for (%i = 0; %i < %arrPurgeFiles[]#; %i++)
+			{
+				%filename = %arrPurgeFiles[%i]
+				if ($str.grep(%filename, %G_hush->%library->%arr_Library))
+				{
+					// found filename in the library array
+				}
+			}
+		}
+		else
+		{
+			// no filenames found over the time limit
+		}
+	}
+	
 	function sortDHByPriority(sorts the hush downloadHash  so that the packs are ordered by best to worst priority for the botNames)
 	{
 		/* this function will sort the hush DownloadHash by botName priority
@@ -3746,7 +3794,6 @@ class("hush::main","widget")
 	{
 		# hush::constructor
 		# creates widget objects and member values for the hush Main window, initializes a lot of things
-		
 		
 		if (@%debug) {debug -c info: building main widget;}
 		
@@ -4917,7 +4964,7 @@ class("hush::library","object")
 			{
 				# check if path exists
 				%path = %G_hush->%libraryoptions->%lviMediaEntries[%i]->$text(2)
-				if (!$file.exists(%path))
+				if ($file.exists(%path) == $false)
 				{
 					# path does not exist
 					if (%G_hush->%debug) {debug -c info - file_exists returned false for path: %path;}
@@ -4936,6 +4983,7 @@ class("hush::library","object")
 			if (%G_hush->%debug) {debug -c $k(2)Library Scan Complete. @%arr_Library[]# entries in library array$k();}
 			# scan finished, update status message on library options widget
 			%G_hush->%libraryoptions->%lblStatusLeft->$setText("Scan complete. %G_hush->%libraryoptions->%lviMediaEntries[]# locations scanned. @%arr_Library[]# items found.")
+			if (@%arr_Library[]# > 0) {@%arr_Library = $sort(@%arr_Library);}
 			# write the hush media library to file on disk
 			file.remove -q @%hushLibrary
 			%G_hush->$configSave(@%hushLibrary,library,@%arr_Library)
@@ -5005,7 +5053,7 @@ class("hush::library","object")
 					{
 						# item is not a directory, so must be a file, add it to result array
 		### dev debug mostly				if (%G_hush->%debug) {debug -c Filetype Match: %item;}
-						%resultArray <+ %item
+						%resultArray <+ $file.fixpath(%item)
 					}
 					# else filetype of item is not in filetypes
 				}
@@ -5056,7 +5104,7 @@ class("hush::library","object")
 					{
 						# item is a file not a directory, so add it to the result array
 		### dev debug mostly				if (%G_hush->%debug) debug -c Filetype Match: %item
-						%resultArray <+ %item
+						%resultArray <+ $file.fixpath(%item)
 					}
 					# else filetype of item is not in filetypes
 				}
@@ -5326,7 +5374,7 @@ class("hush::library","object")
 								if ($str.isUnsignedNumber(%movieYear))
 								{
 									# if movie title string is not found in moviesPermRecord array
-									if (!$str.contains(@%moviesPermRecord,"%movieName (%movieYear)"))
+									if ($str.contains(@%moviesPermRecord,"%movieName (%movieYear)") == $false)
 									{
 										# add title to moviesPermRecord array
 										@%moviesPermRecord <+ "%movieName (%movieYear)"
@@ -5903,12 +5951,11 @@ class("hush::common","object")
 		%array = $1
 		
 		if ($2) %flag = $2; else %flag = index;
-		if ($3) %matchMod = $3; else %matchMod = e;
+		if ($3) %matchMod = $3; else %matchMod = "e";
 		if ($4) %caseSense = $4; else %caseSense = $false;
 		
 		%noMatch = $true
 		%return = $false
-		
 		
 		// A binary search function. It returns 
 		// location of x in given array arr[l..r] if present, 
