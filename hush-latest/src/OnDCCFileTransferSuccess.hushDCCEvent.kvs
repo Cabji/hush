@@ -96,6 +96,13 @@ event(OnDCCFileTransferSuccess,hushDCCEvent)
 						%G_hushDownloadHash{%searchTerm}[%i]->$setInfo(status,Previous Pack Completed)
 						%G_hushDownloadHash{%searchTerm}[%i]->$emit(infoUpdated,%updateDQNum,%updateST,%updateDI});
 					}
+					# dev-note: log this auto download into the autoDownload hash so we can track how long since we got it (used for auto-purge feature)
+					# add filename to the autoDownloadsLog hash
+					# note that we ONLY save the filename downloaded. when we look to purge content, we will need to search any/all library locations 
+					# to find this file if it still exists at purge time. that will have to handled in the purge code.
+					%G_hush->%hashAutoDownloadsLog{$dcc.localFileName($1)} = $unixtime()
+					# save autoDownloadHashLog to settings file
+					%G_hush->$configSave(@%hushConfig, autoDownloadsLog, %G_hush->%hashAutoDownloadsLog)
 				}
 				else
 				{
