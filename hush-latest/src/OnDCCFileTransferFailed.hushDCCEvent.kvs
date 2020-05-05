@@ -37,7 +37,7 @@ event(OnDCCFileTransferFailed,hushDCCEvent)
 		%networkName = %G_hushDownloadHash{%st}[%di]->$getInfo(networkName)
 		%status = %G_hushDownloadHash{%st}[%di]->$getInfo(status)
 		%auto = %G_hushDownloadHash{%st}[%di]->$getInfo(autoDownload)
-		%fcwMsg = '';
+		%fcwMsg = "";
 	// logic: transfer was not a passive transfer 
 		if (%G_hushDownloadHash{%st}[%di]->$getInfo(status) != "Cancelled (Passive Bot)")
 		{
@@ -81,7 +81,7 @@ event(OnDCCFileTransferFailed,hushDCCEvent)
 			}
 	
 			
-			if (%speak) {%G_hush->$doFCW();	rebind $window(%G_hushOptions{"FCW"}); echo -w=$window(%G_hushOptions{"FCW"}) %fcwMsg;}
+			if (%speak == $true && %fcwMsg != "") {%G_hush->$doFCW();	rebind $window(%G_hushOptions{"FCW"}); echo -w=$window(%G_hushOptions{"FCW"}) %fcwMsg;}
 		
 			if (%G_hushLive{"iTransfersActive"} < %G_hushOptions{"TransfersMaxTransfers"})
 			{
