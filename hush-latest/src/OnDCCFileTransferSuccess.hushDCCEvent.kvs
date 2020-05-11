@@ -100,8 +100,9 @@ event(OnDCCFileTransferSuccess,hushDCCEvent)
 					# add filename to the autoDownloadsLog hash
 					# note that we ONLY save the filename downloaded. when we look to purge content, we will need to search any/all library locations 
 					# to find this file if it still exists at purge time. that will have to handled in the purge code.
-					%arrFileName = $str.split("\\",$dcc.localFileName($1))
-					%G_hush->%hashAutoDownloadsLog{%arrFileName[%arrFileName[]#]} = $unixtime()
+	debug -c $k(1)dcc.localFileName returns: $dcc.localFileName($1)$k()
+					%arrFileName = $file.extractfilename($dcc.localFileName($1))
+					%G_hush->%hashAutoDownloadsLog{%arrFileName} = $unixtime()
 					# save autoDownloadHashLog to settings file
 					%G_hush->$configSave(%G_hush->%hushConfig, autoDownloadsLog, %G_hush->%hashAutoDownloadsLog)
 				}
@@ -147,7 +148,7 @@ event(OnDCCFileTransferSuccess,hushDCCEvent)
 		if (%tvInc)
 		{
 			# if the tvInc object exists, it means the file was a tv ep and we incremented the episode
-			if (%G_hush->%debug) {debug -c \n\nWe just completed a TV ep file so we will do another passive search to look for the next ep\n;}
+			if (%G_hush->%debug) {debug -c \nWe just completed a TV ep file so we will do another passive search to look for the next ep\n;}
 			%G_hush->$doPassiveSearch($true);
 		}
 		%G_hush->%queueeditor->$refreshQueue();
