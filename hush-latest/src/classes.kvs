@@ -1941,18 +1941,18 @@ class("hush::options","widget")
 		
 		
 		# layout for Tab: Basic Page
-		@%lPageBasic->$addMultiCellWidget(@%lblHeadingGeneral, 0,0,0,3)
-		@%lPageBasic->$addMultiCellWidget(@%lblFCW, 1,1,0,0)
-		@%lPageBasic->$addMultiCellWidget(@%leFCW, 1,1,1,3)
-		@%lPageBasic->$addMultiCellWidget(@%cbSSL, 2,2,0,3)
-		@%lPageBasic->$addMultiCellWidget(@%lblHeadingNoise, 3,3,0,3)
-		@%lPageBasic->$addMultiCellWidget(@%cbNoiseNone, 4,4,0,3)
-		@%lPageBasic->$addMultiCellWidget(@%cbSWC, 5,5,0,3)
-		@%lPageBasic->$addMultiCellWidget(@%cbZNCPush, 6,6,0,3)
-		@%lPageBasic->$addMultiCellWidget(@%cbZNCPreventQuery, 7,7,0,3)
-		@%lPageBasic->$addMultiCellWidget(@%btnESTF, 8,8,0,1)
-		@%lPageBasic->$addMultiCellWidget(@%btnISFF, 8,8,2,3)
-		@%lPageBasic->$addMultiCellWidget(@%btnCHS, 9,9,0,3)
+		@%lPageBasic->$addMultiCellWidget(@%lblHeadingGeneral,	 0,0,0,3)
+		@%lPageBasic->$addMultiCellWidget(@%lblFCW,			 1,1,0,0)
+		@%lPageBasic->$addMultiCellWidget(@%leFCW,				 1,1,1,3)
+		@%lPageBasic->$addMultiCellWidget(@%cbSSL,				 2,2,0,3)
+		@%lPageBasic->$addMultiCellWidget(@%lblHeadingNoise,		 3,3,0,3)
+		@%lPageBasic->$addMultiCellWidget(@%cbNoiseNone,		 4,4,0,3)
+		@%lPageBasic->$addMultiCellWidget(@%cbSWC,				 5,5,0,3)
+		@%lPageBasic->$addMultiCellWidget(@%cbZNCPush,			 6,6,0,3)
+		@%lPageBasic->$addMultiCellWidget(@%cbZNCPreventQuery,	 7,7,0,3)
+		@%lPageBasic->$addMultiCellWidget(@%btnESTF,			 8,8,0,1)
+		@%lPageBasic->$addMultiCellWidget(@%btnISFF,			 8,8,2,3)
+		@%lPageBasic->$addMultiCellWidget(@%btnCHS,			 9,9,0,3)
 		
 		### Transfers Tab ###
 		@%wgtPageTransfers = $new(widget, 0, "options Transfer Widget for tab")
@@ -2018,9 +2018,19 @@ class("hush::options","widget")
 		@%sbTransfersMaxRetries->$setMaxValue(10)
 		@%sbTransfersMaxRetries->$setValue(3)
 		@%sbTransfersMaxRetries->$setLineStep(1)
+		# connection reset by peer but file complete check
+		@%chbTransfersFailCheck = $new(checkbox, @%wgtPageTransfers)
+		@%chbTransfersFailCheck->$setText("Check for Connection Reset by Peer failures")
+		@%chbTransfersFailCheck->$setTooltip("Toggle on/off if Hush should attempt to deal with downloads that complete but end with a 'Connection Reset by Peer' error.<br/>This setting aims to prevent files being auto-downloaded and marked as a failed transfer when they actually complete.")
+		
+		
+		# On Download Completion
+		
+		
 		@%lblTransfersCompletion = $new(label, @%wgtPageTransfers)
 		@%lblTransfersCompletion->$setText("<hr/><b>On Download Completion</b>")
 		@%lblTransfersCompletion->$setTooltip("The settings below affect how Hush behaves when a download is completed.")
+		
 		# increment tv show episodes automatically toggle
 		@%chbTransfersAutoEpUp = $new(checkbox, @%wgtPageTransfers)
 		@%chbTransfersAutoEpUp->$setText(Automatically increment TV show episodes in passive searches)
@@ -2065,6 +2075,8 @@ class("hush::options","widget")
 		else { @%sbTransfersMaxRetries->$setValue(3); }
 		if (%G_hushOptions{"TransfersMaxTransfers"} != "") { @%sbTransfersMaxTransfers->$setValue(%G_hushOptions{"TransfersMaxTransfers"}); }
 		else { @%sbTransfersMaxTransfers->$setValue(2); }
+		if (%G_hushOptions{"TransfersFailCheck"} != "") { @%chbTransfersFailCheck->$setChecked(%G_hushOptions{"TransfersFailCheck"}); }
+		else { @%chbTransfersFailCheck->$setChecked($true); }
 		if (%G_hushOptions{"TransfersAutoEpUp"} != "") { @%chbTransfersAutoEpUp->$setChecked(%G_hushOptions{"TransfersAutoEpUp"}); }
 		else { @%chbTransfersAutoEpUp->$setChecked($true); }
 		if (%G_hushOptions{"TransfersRmSearchTerm"} != "") { @%chbTransfersRmSearchTerm->$setChecked(%G_hushOptions{"TransfersRmSearchTerm"}); }
@@ -2079,25 +2091,26 @@ class("hush::options","widget")
 		else { @%chbTransfersAutoMCUpdate->$setChecked($true); }
 		
 		# layout for transfers page
-		@%lPageTransfers->$addMultiCellWidget(@%lblTransfersDCCTimeout, 0,0,0,0)
-		@%lPageTransfers->$addMultiCellWidget(@%sbTransfersDCCTimeout, 0,0,1,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoToggle, 1,1,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersSSLAuto, 2,2,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersNoSSLOK, 3,3,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoStopWrongFileToggle, 4,4,0,0)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoStopPassiveToggle, 5,5,0,0)
-		@%lPageTransfers->$addMultiCellWidget(@%lblTransfersMaxT, 6,6,0,0)
-		@%lPageTransfers->$addMultiCellWidget(@%sbTransfersMaxTransfers, 6,6,1,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersRetryToggle, 7,7,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%lblTransfersMaxR, 8,8,0,0)
-		@%lPageTransfers->$addMultiCellWidget(@%sbTransfersMaxRetries, 8,8,1,1)
-		@%lPageTransfers->$addMultiCellWidget(@%lblTransfersCompletion, 9,9,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoEpUp, 10,10,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersRmSearchTerm, 11,11,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersDoneMsg, 12,12,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoExtract, 13,13,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoMove, 14,14,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoMCUpdate, 15,15,0,1)
+		@%lPageTransfers->$addMultiCellWidget(@%lblTransfersDCCTimeout,				 0,0,0,0)
+		@%lPageTransfers->$addMultiCellWidget(@%sbTransfersDCCTimeout,				 0,0,1,1)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoToggle,				 1,1,0,1)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersSSLAuto,				 2,2,0,1)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersNoSSLOK,				 3,3,0,1)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoStopWrongFileToggle,	 4,4,0,0)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoStopPassiveToggle,		 5,5,0,0)
+		@%lPageTransfers->$addMultiCellWidget(@%lblTransfersMaxT,					 6,6,0,0)
+		@%lPageTransfers->$addMultiCellWidget(@%sbTransfersMaxTransfers,			 6,6,1,1)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersRetryToggle,			 7,7,0,1)
+		@%lPageTransfers->$addMultiCellWidget(@%lblTransfersMaxR,					 8,8,0,0)
+		@%lPageTransfers->$addMultiCellWidget(@%sbTransfersMaxRetries,				 8,8,1,1)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersFailCheck,				 9,9,0,1)
+		@%lPageTransfers->$addMultiCellWidget(@%lblTransfersCompletion,				10,10,0,1)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoEpUp,				11,11,0,1)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersRmSearchTerm,			12,12,0,1)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersDoneMsg,				13,13,0,1)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoExtract,			14,14,0,1)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoMove,				15,15,0,1)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoMCUpdate,			16,16,0,1)
 		
 		### Transfer Priority Tab ###
 		@%wgtPageTransferPriority = $new(widget, 0, "options Transfer Priority Widget for tab")
@@ -2158,12 +2171,13 @@ class("hush::options","widget")
 		else { @%chbTPChannelAbsoluteToggle->$setChecked($true); }
 		
 		# layout for Transfer Priority page
-		@%lPageTransferPriority->$addMultiCellWidget(@%lblTPHelp, 0,0,0,2)
-		@%lPageTransferPriority->$addMultiCellWidget(@%lblTPSpeed, 1,1,0,0)
-		@%lPageTransferPriority->$addMultiCellWidget(@%slTPSpeedSuccess, 1,1,1,1)
-		@%lPageTransferPriority->$addMultiCellWidget(@%lblTPSuccess, 1,1,2,2)
-		@%lPageTransferPriority->$addMultiCellWidget(@%chbTPToggle, 2,2,0,2)
-		@%lPageTransferPriority->$addMultiCellWidget(@%mleTPChannels, 3,3,0,2)
+		@%lPageTransferPriority->$addMultiCellWidget(@%lblTPHelp,				 0,0,0,2)
+		@%lPageTransferPriority->$addMultiCellWidget(@%lblTPSpeed,				 1,1,0,0)
+		@%lPageTransferPriority->$addMultiCellWidget(@%slTPSpeedSuccess,		 1,1,1,1)
+		@%lPageTransferPriority->$addMultiCellWidget(@%lblTPSuccess,			 1,1,2,2)
+		@%lPageTransferPriority->$addMultiCellWidget(@%chbTPToggle,			 2,2,0,0)
+		@%lPageTransferPriority->$addMultiCellWidget(@%chbTPChannelAbsoluteToggle,	 2,2,1,1)
+		@%lPageTransferPriority->$addMultiCellWidget(@%mleTPChannels,			 3,3,0,2)
 		
 		### Searching Tab ###
 		@%wgtPageSearching = $new(widget, 0, "options Instant Search Widget for tab")
@@ -2261,21 +2275,21 @@ class("hush::options","widget")
 		else {@%sbISWriteSize->$setValue(500);}
 		
 		# layout for Tab: Searching
-		@%lPageIS->$addMultiCellWidget(@%chbISToggle, 0,0,0,1)
-		@%lPageIS->$addMultiCellWidget(@%chbISPSToggle, 1,1,0,1)
-		@%lPageIS->$addMultiCellWidget(@%chbISObeySE, 2,2,0,1)
-		@%lPageIS->$addMultiCellWidget(@%chbSearchImportsAutoToggle, 3,3,0,1)
-		@%lPageIS->$addMultiCellWidget(@%chbSearchImportsObeyPermRecord, 4,4,0,1)
-		@%lPageIS->$addMultiCellWidget(@%lblSearchImportsAutoPurge, 5,5,0,0)
-		@%lPageIS->$addMultiCellWidget(@%sbSearchImportsAutoPurge, 5,5,1,1)
-		@%lPageIS->$addMultiCellWidget(@%lblISMaxTime, 6,6,0,0)
-		@%lPageIS->$addMultiCellWidget(@%sbISMaxTime, 6,6,1,1)
-		@%lPageIS->$addMultiCellWidget(@%lblISWriteSize, 7,7,0,0)
-		@%lPageIS->$addMultiCellWidget(@%sbISWriteSize, 7,7,1,1)
-		@%lPageIS->$addMultiCellWidget(@%lblISPSFreq, 8,8,0,0)
-		@%lPageIS->$addMultiCellWidget(@%sbISPSFreq, 8,8,1,1)
-		@%lPageIS->$addMultiCellWidget(@%btnISPSNow, 9,9,0,1)
-		@%lPageIS->$addMultiCellWidget(@%btnISReset, 10,10,0,1)
+		@%lPageIS->$addMultiCellWidget(@%chbISToggle,					 0,0,0,1)
+		@%lPageIS->$addMultiCellWidget(@%chbISPSToggle,					 1,1,0,1)
+		@%lPageIS->$addMultiCellWidget(@%chbISObeySE,					 2,2,0,1)
+		@%lPageIS->$addMultiCellWidget(@%chbSearchImportsAutoToggle,		 3,3,0,1)
+		@%lPageIS->$addMultiCellWidget(@%chbSearchImportsObeyPermRecord,	 4,4,0,1)
+		@%lPageIS->$addMultiCellWidget(@%lblSearchImportsAutoPurge,		 5,5,0,0)
+		@%lPageIS->$addMultiCellWidget(@%sbSearchImportsAutoPurge,			 5,5,1,1)
+		@%lPageIS->$addMultiCellWidget(@%lblISMaxTime,					 6,6,0,0)
+		@%lPageIS->$addMultiCellWidget(@%sbISMaxTime,					 6,6,1,1)
+		@%lPageIS->$addMultiCellWidget(@%lblISWriteSize,				 7,7,0,0)
+		@%lPageIS->$addMultiCellWidget(@%sbISWriteSize,					 7,7,1,1)
+		@%lPageIS->$addMultiCellWidget(@%lblISPSFreq,					 8,8,0,0)
+		@%lPageIS->$addMultiCellWidget(@%sbISPSFreq,					 8,8,1,1)
+		@%lPageIS->$addMultiCellWidget(@%btnISPSNow,					 9,9,0,1)
+		@%lPageIS->$addMultiCellWidget(@%btnISReset,					10,10,0,1)
 		
 		### Media Centre Tab ###
 		@%wgtPageMediaCentre = $new(widget, , "options Media Centre Widget for tab")
@@ -2310,10 +2324,10 @@ class("hush::options","widget")
 		}
 		
 		# layout for Tab: Media Centre
-		@%lPageMC->$addMultiCellWidget(@%lblMediaCentreInfo, 0,0,0,1)
-		@%lPageMC->$addMultiCellWidget(@%lblMediaCentreDevices, 1,1,0,1)
-		@%lPageMC->$addMultiCellWidget(@%mleMediaCentreDevices, 2,2,0,1)
-		@%lPageMC->$addMultiCellWidget(@%btnMediaCentreUpdate, 3,3,0,1)
+		@%lPageMC->$addMultiCellWidget(@%lblMediaCentreInfo,		 0,0,0,1)
+		@%lPageMC->$addMultiCellWidget(@%lblMediaCentreDevices,	 1,1,0,1)
+		@%lPageMC->$addMultiCellWidget(@%mleMediaCentreDevices,	 2,2,0,1)
+		@%lPageMC->$addMultiCellWidget(@%btnMediaCentreUpdate,	 3,3,0,1)
 		
 		# add pages to tab
 		@%tabw->$addTab(@%wgtPageBasic, "&Basic")
@@ -2324,8 +2338,8 @@ class("hush::options","widget")
 		
 		# base tab
 		
-		@%l0->$addMultiCellWidget(@%lblTitle, 0,0,0,0)
-		@%l0->$addMultiCellWidget(@%tabw, 1,1,0,0);
+		@%l0->$addMultiCellWidget(@%lblTitle,		 0,0,0,0)
+		@%l0->$addMultiCellWidget(@%tabw,		 1,1,0,0);
 		
 		objects.connect @%btnISPSNow clicked %G_hush doPassiveSearch
 		objects.connect @%btnISReset clicked $$ fnISReset
@@ -2365,37 +2379,38 @@ class("hush::options","widget")
 		privateimpl($$, closeEvent)
 		{
 			# closing the settings::options window so we need to set and save all the values
-			%G_hushOptions{"FCW"} = @%leFCW->$text()
-			%G_hushOptions{"ISEnabled"} = @%chbISToggle->$isChecked()
-			%G_hushOptions{"ISMaxTime"} = @%sbISMaxTime->$value()
-			%G_hushOptions{"ISObeySE"} = @%chbISObeySE->$isChecked()
-			%G_hushOptions{"ISPSToggle"} = @%chbISPSToggle->$isChecked()
-			%G_hushOptions{"ISPSFreq"} = @%sbISPSFreq->$value()
-			%G_hushOptions{"ISWriteSize"} = @%sbISWriteSize->$value()
-			%G_hushOptions{"NoiseNone"} = @%cbNoiseNone->$isChecked()
-			%G_hushOptions{"SearchImportsAutoPurge"} = @%sbSearchImportsAutoPurge->$value()
-			%G_hushOptions{"SearchImportsAutoToggle"} = @%chbSearchImportsAutoToggle->$isChecked()
-			%G_hushOptions{"SearchImportsObeyPermRecord"} = @%chbSearchImportsObeyPermRecord->$isChecked()
-			%G_hushOptions{"SWC"} = @%cbSWC->$isChecked()
-			%G_hushOptions{"SSL"} = @%cbSSL->$isChecked()
-			%G_hushOptions{"TransfersAutoEpUp"} = @%chbTransfersAutoEpUp->$isChecked()
-			%G_hushOptions{"TransfersAutoExtract"} = @%chbTransfersAutoExtract->$isChecked()
-			%G_hushOptions{"TransfersAutoMCUpdate"} = @%chbTransfersAutoMCUpdate->$isChecked()
-			%G_hushOptions{"TransfersAutoMove"} = @%chbTransfersAutoMove->$isChecked()
-			%G_hushOptions{"TransfersAutoStopPassive"} = @%chbTransfersAutoStopPassiveToggle->$isChecked()
-			%G_hushOptions{"TransfersAutoStopWrongFile"} = @%chbTransfersAutoStopWrongFileToggle->$isChecked()
-			%G_hushOptions{"TransfersAutoToggle"} = @%chbTransfersAutoToggle->$isChecked()
-			%G_hushOptions{"TransfersDoneMsg"} = @%chbTransfersDoneMsg->$isChecked()
-			%G_hushOptions{"TransfersMaxRetries"} = @%sbTransfersMaxRetries->$value()
-			%G_hushOptions{"TransfersMaxTransfers"} = @%sbTransfersMaxTransfers->$value()
-			%G_hushOptions{"TransferPrioritySpeedSuccess"} = @%slTPSpeedSuccess->$value()
-			%G_hushOptions{"TransferPriorityToggle"} = @%chbTPToggle->$isChecked()
-			%G_hushOptions{"TransferPriorityChannelAbsoluteToggle"} = @%chbTPChannelAbsoluteToggle->$isChecked()
-			%G_hushOptions{"TransfersRetryToggle"} = @%chbTransfersRetryToggle->$isChecked()
-			%G_hushOptions{"TransfersRmSearchTerm"} = @%chbTransfersRmSearchTerm->$isChecked()
-			%G_hushOptions{"TransfersSSLAuto"} = @%chbTransfersSSLAuto->$isChecked()
-			%G_hushOptions{"ZNCPush"} = @%cbZNCPush->$isChecked()
-			%G_hushOptions{"ZNCPreventQuery"} = @%cbZNCPreventQuery->$isChecked()
+			%G_hushOptions{"FCW"} 							= @%leFCW->$text()
+			%G_hushOptions{"ISEnabled"} 						= @%chbISToggle->$isChecked()
+			%G_hushOptions{"ISMaxTime"} 						= @%sbISMaxTime->$value()
+			%G_hushOptions{"ISObeySE"} 						= @%chbISObeySE->$isChecked()
+			%G_hushOptions{"ISPSToggle"} 						= @%chbISPSToggle->$isChecked()
+			%G_hushOptions{"ISPSFreq"} 						= @%sbISPSFreq->$value()
+			%G_hushOptions{"ISWriteSize"} 						= @%sbISWriteSize->$value()
+			%G_hushOptions{"NoiseNone"} 						= @%cbNoiseNone->$isChecked()
+			%G_hushOptions{"SearchImportsAutoPurge"} 				= @%sbSearchImportsAutoPurge->$value()
+			%G_hushOptions{"SearchImportsAutoToggle"} 				= @%chbSearchImportsAutoToggle->$isChecked()
+			%G_hushOptions{"SearchImportsObeyPermRecord"} 			= @%chbSearchImportsObeyPermRecord->$isChecked()
+			%G_hushOptions{"SWC"} 							= @%cbSWC->$isChecked()
+			%G_hushOptions{"SSL"} 							= @%cbSSL->$isChecked()
+			%G_hushOptions{"TransfersAutoEpUp"} 					= @%chbTransfersAutoEpUp->$isChecked()
+			%G_hushOptions{"TransfersAutoExtract"} 				= @%chbTransfersAutoExtract->$isChecked()
+			%G_hushOptions{"TransfersAutoMCUpdate"} 				= @%chbTransfersAutoMCUpdate->$isChecked()
+			%G_hushOptions{"TransfersAutoMove"} 					= @%chbTransfersAutoMove->$isChecked()
+			%G_hushOptions{"TransfersAutoStopPassive"} 			= @%chbTransfersAutoStopPassiveToggle->$isChecked()
+			%G_hushOptions{"TransfersAutoStopWrongFile"}			= @%chbTransfersAutoStopWrongFileToggle->$isChecked()
+			%G_hushOptions{"TransfersAutoToggle"} 				= @%chbTransfersAutoToggle->$isChecked()
+			%G_hushOptions{"TransfersDoneMsg"} 					= @%chbTransfersDoneMsg->$isChecked()
+			%G_hushOptions{"TransfersMaxRetries"}					= @%sbTransfersMaxRetries->$value()
+			%G_hushOptions{"TransfersMaxTransfers"}				= @%sbTransfersMaxTransfers->$value()
+			%G_hushOptions{"TransfersFailCheck"}					= @%chbTransfersFailCheck->$isChecked()
+			%G_hushOptions{"TransferPrioritySpeedSuccess"}			= @%slTPSpeedSuccess->$value()
+			%G_hushOptions{"TransferPriorityToggle"}				= @%chbTPToggle->$isChecked()
+			%G_hushOptions{"TransferPriorityChannelAbsoluteToggle"}	= @%chbTPChannelAbsoluteToggle->$isChecked()
+			%G_hushOptions{"TransfersRetryToggle"}				= @%chbTransfersRetryToggle->$isChecked()
+			%G_hushOptions{"TransfersRmSearchTerm"}				= @%chbTransfersRmSearchTerm->$isChecked()
+			%G_hushOptions{"TransfersSSLAuto"}					= @%chbTransfersSSLAuto->$isChecked()
+			%G_hushOptions{"ZNCPush"}							= @%cbZNCPush->$isChecked()
+			%G_hushOptions{"ZNCPreventQuery"}					= @%cbZNCPreventQuery->$isChecked()
 		#	if (%G_hush->%debug) {debug -c saving external media centre details to %G_hush->%hushMediaCentres;}
 			@%mleMediaCentreDevices->$saveFile(%G_hush->%hushMediaCentres)
 		#	if (%G_hush->%debug) {debug -c saving channel priorities to %G_hush->%hushMediaCentres;}
@@ -2837,28 +2852,32 @@ class("hush::main","widget")
 			
 		}
 		
-		// during testing, the callback code will be executed here
-		// first, find a way to filter which items in @%hashAutoDownloadsLog are over the time limit
-		%maxTime = 60000
+		%maxTime = 60
 		%arrPurgeFiles = $array()
 		
-		foreach (%filename,$keys(@%hashAutoDownloadsLog))
+		// loop the AutoDownloadPurgeLog hash
+		foreach (%filename,$keys(%AutoLog))
 		{
-			if ($(@%hashAutoDownloadsLog{%filename} + %maxTime) < $unixtime())
+			if ($(%AutoLog{%filename} + %maxTime) < $unixtime())
 			{
+				// add to array of files to be purged if maxTime has elapsed
 				%arrPurgeFiles <+ %filename
 			}
 		}
 		
+		// if we found some filenames to purge
 		if (%arrPurgeFiles[]# > 0)
 		{
-			// look for these filenames in the media library arrays (TV and/or Movies) to find if they exist still and where they are located on disk
+			// loop the filenames to purge
 			for (%i = 0; %i < %arrPurgeFiles[]#; %i++)
 			{
 				%filename = %arrPurgeFiles[%i]
-				if ($str.grep(%filename, %G_hush->%library->%arr_Library))
+				// search for the filename's entry in the library array
+				%result = %G_hush->%common->$fnArrayIterativeSearch(%filename, %G_hush->%library->%arr_Library, index, "r")
+				if ($typeOf(%result) != boolean && %result >= 0)
 				{
-					// found filename in the library array
+					// check if the the full path comes from a Movie library location or TV location
+					// and alter flow depending on user settings
 				}
 			}
 		}

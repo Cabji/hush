@@ -30,13 +30,15 @@ event(OnDCCFileTransferFailed,hushDCCEvent)
 		%G_hushDownloadHash{%st}[%di]->$timerUpdateInfo($false,%st|||%di)
 	
 		### Data Acquisition ###
-		%averageSpeed = %G_hushDownloadHash{%st}[%di]->$getInfo(averageSpeed)
-		%attempts = %G_hushDownloadHash{%st}[%di]->$getInfo(attempts)
-		%botName = %G_hushDownloadHash{%st}[%di]->$getInfo(botname)
-		%channelName = %G_hushDownloadHash{%st}[%di]->$getInfo(channelName)
-		%networkName = %G_hushDownloadHash{%st}[%di]->$getInfo(networkName)
-		%status = %G_hushDownloadHash{%st}[%di]->$getInfo(status)
-		%auto = %G_hushDownloadHash{%st}[%di]->$getInfo(autoDownload)
+		%averageSpeed 	= %G_hushDownloadHash{%st}[%di]->$getInfo(averageSpeed)
+		%attempts 		= %G_hushDownloadHash{%st}[%di]->$getInfo(attempts)
+		%botName 		= %G_hushDownloadHash{%st}[%di]->$getInfo(botname)
+		%channelName 	= %G_hushDownloadHash{%st}[%di]->$getInfo(channelName)
+		%networkName 	= %G_hushDownloadHash{%st}[%di]->$getInfo(networkName)
+		%packname		= %G_hushDownloadHash{%st}[%di]->$getInfo(packName)
+		%status 		= %G_hushDownloadHash{%st}[%di]->$getInfo(status)
+		%auto 		= %G_hushDownloadHash{%st}[%di]->$getInfo(autoDownload)
+	
 		%fcwMsg = "";
 	// logic: transfer was not a passive transfer 
 		if (%G_hushDownloadHash{%st}[%di]->$getInfo(status) != "Cancelled (Passive Bot)")
@@ -59,6 +61,17 @@ event(OnDCCFileTransferFailed,hushDCCEvent)
 	
 			if ($0 == "Connection reset by peer" || $0 == "Connection timed out")
 			{
+				// dev-note: if %G_hushOptions{"TransfersFailCheck"} is true we need to check if this file has downloaded to completion
+				if (%G_hushOptions{"TransfersFailCheck"} == $true)
+				{
+					// check local size of file against the remotesize, if the file is complete we should make Hush treat it as complete
+					if ($dcc.localFileSize($2) == $dcc.remoteFileSize($2))
+					{
+						// set this file as complete in Hush
+						%fcwMsg = $k(3)!! Transfer Complete$k() - $k(12)%packName$k() from $k(12)%botName$k() [$str.printf("?.2f",$($real($dcc.averageSpeed($2)) / 1024.0 / 1024.0)) Mb/sec]
+						%status = "!! Complete"
+					}
+				}
 				# transfer failed unexpectedly, update values and do a retry?
 				# dev-note: setting status to "Retrying" instead of "Failed" means xdcc::doNextAutoDownload will do a retry on it as long as attempts are low enough.
 				%fcwMsg = $k(4)Failed$k() - $k(12)$dcc.remoteFileName($2)$k from $k(12)$dcc.remoteNick($2)$k() did not complete. Reason: '$0'
@@ -82,7 +95,14 @@ event(OnDCCFileTransferFailed,hushDCCEvent)
 	
 			
 			if (%speak == $true && %fcwMsg != "") {%G_hush->$doFCW();	rebind $window(%G_hushOptions{"FCW"}); echo -w=$window(%G_hushOptions{"FCW"}) %fcwMsg;}
-		
+	
+	// logic: if this was a Connection Reset by Peer Fail Check transfer auto move file to media location based on user settings
+			if (%status == "!! Complete" && %G_hushOptions{"TransfersAutoMove"}) 
+			{
+				xdcc::moveToLibrary %st %di
+				%G_hush->%library->$scanLibrary()
+			}
+	
 			if (%G_hushLive{"iTransfersActive"} < %G_hushOptions{"TransfersMaxTransfers"})
 			{
 				xdcc::doNextAutoDownload
@@ -102,7 +122,7 @@ event(OnDCCFileTransferFailed,hushDCCEvent)
 		%G_hushDownloadHash{%st}[%di]->$updateInfo()
 		
 	
-		# insert botstats info to database
+	// insert botstats info to database
 		# fields: (networkName text NOT NULL, channelName text NOT NULL, botName text NOT NULL, transfersTotal integer NOT NULL, transfersSuccess integer NOT NULL, speedBest integer, speedAverage integer
 	
 		# first we must check to see if this specific bot has a record in the botstats table
