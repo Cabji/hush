@@ -1743,6 +1743,11 @@ class("hush::queueeditor","widget")
 
 class("hush::options","widget")
 {
+	function updateSliderFailValue(updates the label value when the slider fail value changes)
+	{
+		@%lblTransfersSliderRHS->$setText($str.printf("?.2f",$($real(@%slTransfersFailAmount->$value()) / 100)))
+	}
+	
 	function slotTransfersDCCTimeoutChange(handles when the value changes in the transfers DCC Timeout spinbox)
 	{
 		# this function is a slot to catch the valueChanged signal on a spinbox
@@ -2022,6 +2027,20 @@ class("hush::options","widget")
 		@%chbTransfersFailCheck = $new(checkbox, @%wgtPageTransfers)
 		@%chbTransfersFailCheck->$setText("Check for Connection Reset by Peer failures")
 		@%chbTransfersFailCheck->$setTooltip("Toggle on/off if Hush should attempt to deal with downloads that complete but end with a 'Connection Reset by Peer' error.<br/>This setting aims to prevent files being auto-downloaded and marked as a failed transfer when they actually complete.")
+		# label for slider LHS
+		@%lblTransfersSliderLHS = $new(label, @%wgtPageTransfers)
+		@%lblTransfersSliderLHS->$setText("Acceptable \% Remaining on Failure: ")
+		@%lblTransfersSliderLHS->$setTooltip("If a transfer fails and <i>Check for Connection Reset by Peer failures</i> is checked, a transfer will be deemed a <b>successful</b> transfer if it failed within the percentage set here.<br/>For example: If you set the slider to 1, a transfer that fails at 98.99\% is deemed a failure, but a transfer that fails at 99.00\% or higher is considered a success.")
+		# slider for % value to accept if transfer fails
+		@%slTransfersFailAmount = $new(slider, @%wgtPageTransfers)
+		@%slTransfersFailAmount->$setOrientation(horizontal)
+		@%slTransfersFailAmount->$setMinValue(0)
+		@%slTransfersFailAmount->$setMaxValue(100)
+		@%slTransfersFailAmount->$setLineStep(1)
+		@%slTransfersFailAmount->$setTickMarks("Both")
+		# label for slider RHS
+		@%lblTransfersSliderRHS = $new(label, @%wgtPageTransfers)
+		@%lblTransfersSliderRHS->$setText($($real(@%slTransfersFailAmount->$value()) / 100))
 		
 		
 		# On Download Completion
@@ -2077,6 +2096,8 @@ class("hush::options","widget")
 		else { @%sbTransfersMaxTransfers->$setValue(2); }
 		if (%G_hushOptions{"TransfersFailCheck"} != "") { @%chbTransfersFailCheck->$setChecked(%G_hushOptions{"TransfersFailCheck"}); }
 		else { @%chbTransfersFailCheck->$setChecked($true); }
+		if (%G_hushOptions{"TransfersFailValue"} != "") { @%slTransfersFailAmount->$setValue(%G_hushOptions{"TransfersFailValue"}); }
+		else { @%slTransfersFailAmount->$setValue(50); }
 		if (%G_hushOptions{"TransfersAutoEpUp"} != "") { @%chbTransfersAutoEpUp->$setChecked(%G_hushOptions{"TransfersAutoEpUp"}); }
 		else { @%chbTransfersAutoEpUp->$setChecked($true); }
 		if (%G_hushOptions{"TransfersRmSearchTerm"} != "") { @%chbTransfersRmSearchTerm->$setChecked(%G_hushOptions{"TransfersRmSearchTerm"}); }
@@ -2090,27 +2111,33 @@ class("hush::options","widget")
 		if (%G_hushOptions{"TransfersAutoMCUpdate"} != "") { @%chbTransfersAutoMCUpdate->$setChecked(%G_hushOptions{"TransfersAutoMCUpdate"}); }
 		else { @%chbTransfersAutoMCUpdate->$setChecked($true); }
 		
+		
 		# layout for transfers page
 		@%lPageTransfers->$addMultiCellWidget(@%lblTransfersDCCTimeout,				 0,0,0,0)
-		@%lPageTransfers->$addMultiCellWidget(@%sbTransfersDCCTimeout,				 0,0,1,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoToggle,				 1,1,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersSSLAuto,				 2,2,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersNoSSLOK,				 3,3,0,1)
+		@%lPageTransfers->$addMultiCellWidget(@%sbTransfersDCCTimeout,				 0,0,1,2)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoToggle,				 1,1,0,2)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersSSLAuto,				 2,2,0,2)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersNoSSLOK,				 3,3,0,2)
 		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoStopWrongFileToggle,	 4,4,0,0)
 		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoStopPassiveToggle,		 5,5,0,0)
 		@%lPageTransfers->$addMultiCellWidget(@%lblTransfersMaxT,					 6,6,0,0)
-		@%lPageTransfers->$addMultiCellWidget(@%sbTransfersMaxTransfers,			 6,6,1,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersRetryToggle,			 7,7,0,1)
+		@%lPageTransfers->$addMultiCellWidget(@%sbTransfersMaxTransfers,			 6,6,1,2)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersRetryToggle,			 7,7,0,2)
 		@%lPageTransfers->$addMultiCellWidget(@%lblTransfersMaxR,					 8,8,0,0)
-		@%lPageTransfers->$addMultiCellWidget(@%sbTransfersMaxRetries,				 8,8,1,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersFailCheck,				 9,9,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%lblTransfersCompletion,				10,10,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoEpUp,				11,11,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersRmSearchTerm,			12,12,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersDoneMsg,				13,13,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoExtract,			14,14,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoMove,				15,15,0,1)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoMCUpdate,			16,16,0,1)
+		@%lPageTransfers->$addMultiCellWidget(@%sbTransfersMaxRetries,				 8,8,1,2)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersFailCheck,				 9,9,0,2)
+		
+		@%lPageTransfers->$addMultiCellWidget(@%lblTransfersSliderLHS,				10,10,0,0)
+		@%lPageTransfers->$addMultiCellWidget(@%slTransfersFailAmount,				10,10,1,1)
+		@%lPageTransfers->$addMultiCellWidget(@%lblTransfersSliderRHS,				10,10,2,2)
+		
+		@%lPageTransfers->$addMultiCellWidget(@%lblTransfersCompletion,				11,11,0,2)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoEpUp,				12,12,0,2)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersRmSearchTerm,			13,13,0,2)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersDoneMsg,				14,14,0,2)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoExtract,			15,15,0,2)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoMove,				16,16,0,2)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoMCUpdate,			17,17,0,2)
 		
 		### Transfer Priority Tab ###
 		@%wgtPageTransferPriority = $new(widget, 0, "options Transfer Priority Widget for tab")
@@ -2345,6 +2372,10 @@ class("hush::options","widget")
 		objects.connect @%btnISReset clicked $$ fnISReset
 		objects.connect @%sbTransfersDCCTimeout valueChanged $$ slotTransfersDCCTimeoutChange
 		objects.connect @%btnMediaCentreUpdate clicked %G_hush updateMediaCentres
+		objects.connect @%slTransfersFailAmount valueChanged $$ updateSliderFailValue
+		
+		// dev-note: this emit call is here to update the UI. dont remove it
+		@%slTransfersFailAmount->$emit("valueChanged")
 		
 		### private impls
 		
@@ -2403,6 +2434,7 @@ class("hush::options","widget")
 			%G_hushOptions{"TransfersMaxRetries"}					= @%sbTransfersMaxRetries->$value()
 			%G_hushOptions{"TransfersMaxTransfers"}				= @%sbTransfersMaxTransfers->$value()
 			%G_hushOptions{"TransfersFailCheck"}					= @%chbTransfersFailCheck->$isChecked()
+			%G_hushOptions{"TransfersFailValue"}					= @%slTransfersFailAmount->$value()
 			%G_hushOptions{"TransferPrioritySpeedSuccess"}			= @%slTPSpeedSuccess->$value()
 			%G_hushOptions{"TransferPriorityToggle"}				= @%chbTPToggle->$isChecked()
 			%G_hushOptions{"TransferPriorityChannelAbsoluteToggle"}	= @%chbTPChannelAbsoluteToggle->$isChecked()
