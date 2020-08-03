@@ -59,7 +59,7 @@ event(OnDCCFileTransferFailed,hushDCCEvent)
 				%fcwMsg = $k(4)%status$k() - $k(12)$dcc.remoteFileName($2)$k from $k(12)$dcc.remoteNick($2)$k()
 			}
 	
-			if ($0 == "Connection reset by peer" || $0 == "Connection timed out")
+			if ($0 == "Connection reset by peer" || $0 == "Connection timed out" || $0 == "File I/O error")
 			{
 				// dev-note: if %G_hushOptions{"TransfersFailCheck"} is true we need to check if this file has downloaded to completion
 				if (%G_hushOptions{"TransfersFailCheck"} == $true)
