@@ -83,6 +83,7 @@ event(OnDCCFileTransferFailed,hushDCCEvent)
 				{
 					%status = "Failed"
 				}
+				if ($0 == "File I/O error") {%fcwMsg << "(Disk is out of space)";}
 			}
 	
 			%G_hushDownloadHash{%st}[%di]->$setInfo(status,%status)
