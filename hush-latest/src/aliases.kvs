@@ -440,9 +440,20 @@ alias(xdcc::moveToLibrary)
 						%showSeason = $str.replace(%showSeason,S,"Season ")
 						%seasonValue = $str.rightfromlast(%showSeason," ")
 						if (%G_hush->%debug) {debug -c We detected this data: \nShow Name: %showName\nShow Season: %showSeason\nSeason Value: %seasonValue;}
+						# if we have no show name, something is wrong and we need to abort
+						if (%showName == "") 
+						{
+							if (%G_hush->%debug) {debug -c No show name was detected. Maybe this file has mistakenly been categorized as a TV Show? Here is the data we had: \n\%best = %best\nshowName = %showName\nshowSeason = %showSeason;}
+							halt;
+						}
 						# now compare the show name against existing show names we have in the tv library
 						%shows = %G_hush->%library->%arr_TVShows
-						# find TV show name in existing Library array, we prefer this value because we know its the name of the folder the tv is held in
+	
+		# find TV show name in existing Library array, we prefer this value because we know its 
+		# the name of the folder the tv is held in
+		# 20210213: this foreach is aiming to find the best match for the BASE TV folder for the 
+		# filename we're dealing with
+		#   so it will try to set the destPath to the TV Show base path like: X:\TV Show\
 						foreach (%show, %shows)
 						{
 							%match = %showName
@@ -455,48 +466,54 @@ alias(xdcc::moveToLibrary)
 							if ($str.match(%match,%show,w)) 
 							{
 								if (%G_hush->%debug) {debug -c %show matches %filename;}
-								%showName = %show
+								# 20210213 %show will be a string like X:\TV\Show Name\Season XX\filename.mkv
+								%destPath = %show
+								# the following regexp changes the absolute path filename to X:\TV\Show Name (no trailing slash)
+								# NOTE!!: the \\\\ slashes are Windows OS SPECIFIC!!!!
+								%destPath =~ s/(.*)(\\\\Season.*)/\\1/i
 								break;
 							}
 						}
-						# if we still have no show name, something is wrong and we need to abort
-						if (%showName == "") 
+		
+		# next we get the directory names in the destPath we found and store them in %tvDir
+		# tvDir is an array of values like: Season 01, Season 02, Season 03 etc.
+						if ($file.exists(%destPath))
 						{
-							if (%G_hush->%debug) {debug -c No show name was detected. Maybe this file has mistakenly been categorized as a TV Show? Here is the data we had: \n\%best = %best\nshowName = %showName\nshowSeason = %showSeason;}
-							halt;
+							%tvDir = $file.ls(%destPath,dzni)
 						}
-						else
+	
+		# iterate over the tvDir and see if a matching season directory exists
+						if (%tvDir)
 						{
-							if ($file.exists(%G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))/%showName))
+							foreach (%seasonDir, %tvDir)
 							{
-								%tvDir = $file.ls(%G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))/%showName,dzni)
-							}
-							if (%tvDir)
-							{
-								foreach (%seasonDir, %tvDir)
+			# seasonValue is an integer value found in the filename we're working with
+			# if we find seasonValue in seasonDir (eg: Season 02) we set showSeason to seasonDir
+			# therefore, for example, %showSeason is a string like: "Season 02"
+								if ($str.contains(%seasonDir,%seasonValue))
 								{
-									if ($str.contains(%seasonDir,%seasonValue))
-									{
-										%showSeason = %seasonDir
-									}
+									%showSeason = %seasonDir
 								}
 							}
-							# following code makes tv show and season folders if they dont exist. 
-							# dev note: if these mkdir calls fail the script will halt on the failure (the -e switch does this)
-							if (!$file.exists(%G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))/%showName/%showSeason))
+						}
+	
+		# following code makes tv show and season folders if they dont exist. 
+		# if the Show Name\Season XX folder exists already, this code is skipped.
+		# dev note: if these mkdir calls fail the script will halt on the failure (the -e switch does this)
+						if ($file.exists(%destPath/%showSeason) == $false)
+						{
+							if ($file.exists(%destPath) == $false)
 							{
-								if (!$file.exists(%G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))/%showName))
-								{
-									if (%G_hush->%debug) {debug -c attempting to make Show Name folder: $file.fixpath(%G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))/%showName);}
-									file.mkdir -q $file.fixpath(%G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))/%showName)
-								}
-								if (%G_hush->%debug) {debug -c attempting to make Show Season folder: %file.fixpath(%G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))/%showName/%showSeason);}
-								file.mkdir -q $file.fixpath(%G_hush->%libraryoptions->$getLoc(%G_hushDownloadHash{"$0"}[$1]->$getInfo(mediaCategory))/%showName/%showSeason)
+								if (%G_hush->%debug) {debug -c "attempting to make Show Name folder: $file.fixpath(%destPath)";}
+								file.mkdir -q $file.fixpath(%destPath)
 							}
-							# append %destPath to have TV Show info on the end
-							%destPath .= /%showName/%showSeason
-							if (%G_hush->%debug) {debug -c destPath where TV Show file should be going: %destPath;}
-						} # end else
+							if (%G_hush->%debug) {debug -c attempting to make Show Season folder: $file.fixpath(%destPath/%showSeason);}
+							file.mkdir -q $file.fixpath(%destPath/%showSeason)
+						}
+	
+						# append %destPath (X:\TV\Show Name) to have Season Value (Season XX) on the end
+						%destPath .= /%showSeason
+						if (%G_hush->%debug) {debug -c destPath where TV Show file should be going: %destPath;}
 					} # end case TV Shows
 				} # end switch
 	# Windows OS Specific code: build a batch file in the incoming directory
