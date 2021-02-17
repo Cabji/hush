@@ -59,13 +59,17 @@ event(OnDCCFileTransferFailed,hushDCCEvent)
 				%fcwMsg = $k(4)%status$k() - $k(12)$dcc.remoteFileName($2)$k from $k(12)$dcc.remoteNick($2)$k()
 			}
 	
-			if ($0 == "Connection reset by peer" || $0 == "Connection timed out" || $0 == "File I/O error")
+			if ($0 == "Connection reset by peer" || $0 == "Connection timed out" || $0 == "File I/O error" || $0 == "Unknown error")
 			{
 				// dev-note: if %G_hushOptions{"TransfersFailCheck"} is true we need to check if this file has downloaded to completion
 				if (%G_hushOptions{"TransfersFailCheck"} == $true)
 				{
+					// find the acceptable difference in local and remote file sizes for transfers that fail close to 100%
+					%acceptableDiff = $($dcc.remoteFileSize($2) / 100 * %G_hushOptions{"TransfersFailValue"})
+					// get the difference between remote filesize and local filesize
+					%diff = $($dcc.remoteFileSize($2) - $dcc.localFileSize($2))
 					// check local size of file against the remotesize, if the file is complete we should make Hush treat it as complete
-					if ($dcc.localFileSize($2) == $dcc.remoteFileSize($2))
+					if (%diff <= %acceptableDiff)
 					{
 						// set this file as complete in Hush
 						%fcwMsg = $k(3)!! Transfer Complete$k() - $k(12)%packName$k() from $k(12)%botName$k() [$str.printf("?.2f",$($real($dcc.averageSpeed($2)) / 1024.0 / 1024.0)) Mb/sec]
