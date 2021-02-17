@@ -59,7 +59,7 @@ event(OnDCCFileTransferFailed,hushDCCEvent)
 				%fcwMsg = $k(4)%status$k() - $k(12)$dcc.remoteFileName($2)$k from $k(12)$dcc.remoteNick($2)$k()
 			}
 	
-			if ($0 == "Connection reset by peer" || $0 == "Connection timed out" || $0 == "File I/O error" || $0 == "Unknown error")
+			if ($0 == "Connection reset by peer" || $0 == "Connection timed out" || $0 == "File I/O error" || $0 == "Unknown error" || $0 "Remote end has closed the connection")
 			{
 				// find the acceptable difference in local and remote file sizes for transfers that fail close to 100%
 				%acceptableDiff = $($dcc.remoteFileSize($2) / 100 * %G_hushOptions{"TransfersFailValue"})

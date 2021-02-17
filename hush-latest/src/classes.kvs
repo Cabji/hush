@@ -1746,6 +1746,7 @@ class("hush::options","widget")
 	function updateSliderFailValue(updates the label value when the slider fail value changes)
 	{
 		@%lblTransfersSliderRHS->$setText($str.printf("?.2f",$($real(@%slTransfersFailAmount->$value()) / 100)))
+		%G_hushOptions{"TransfersFailValue"} = @%slTransfersFailAmount->$value()
 	}
 	
 	function slotTransfersDCCTimeoutChange(handles when the value changes in the transfers DCC Timeout spinbox)
@@ -4226,7 +4227,7 @@ class("hush::main","widget")
 		# note: statusContinue and statusStop <-- "continue" and "stop" is sepcifically referring to the loops below. if an xdccobject
 		# status is in the Stop string, we want the loop to "stop" and return the entry!
 		%activeST = $0
-		%statusContinue = "Cancelled (Passive Bot), Cancelled (Unsupported Command), Complete, Connecting, Failed, IRC Network Unavailable, Previous Pack Completed, Receiving, Session Timed Out, User Aborted, User Cancelled, Wrong File, Waiting (RQ)"
+		%statusContinue = "Cancelled (Passive Bot), Cancelled (Unsupported Command), Complete, !! Complete, Connecting, Failed, IRC Network Unavailable, Previous Pack Completed, Receiving, Session Timed Out, User Aborted, User Cancelled, Wrong File, Waiting (RQ)"
 		%statusStop = "Queued, Retrying"
 		# append the statusStop string with the status for when bot says it doesnt support SSL if the user wants to allow non SSL auto downloads
 		if (%G_hushOptions{"TransfersNoSSLOK"}) {%statusStop .= ", Cancelled (No SSL)";}
@@ -5516,7 +5517,7 @@ class("hush::instantsearch","widget")
 			}
 		}
 		
-		%query = "SELECT strftime('\%Y\%m\%d-\%H:\%M', DATETIME(timestamp, 'unixepoch', 'localtime')) AS timestamp,networkName,channelName,botName,packName,(substr('00000'||(packSize / 1024 / 1024), -5, 5)||' Mb') AS packSize,packNum,substr('000'||packGets, -3, 3) AS packGets FROM instant WHERE timestamp IN (SELECT MAX(timestamp) FROM instant GROUP BY botName,packName,packSize) AND packName LIKE '\%%q\%'%searchExceptions ORDER BY packName,timestamp;"
+		%query = "SELECT strftime('\%Y\%m\%d-\%H:\%M', DATETIME(timestamp, 'unixepoch', 'localtime')) AS timestamp,networkName,channelName,botName,packName,(substr('00000'||(packSize / 1024 / 1024), -5, 5)||' Mb') AS packSize,packNum,substr('000'||packGets, -3, 3) AS packGets FROM instant WHERE timestamp IN (SELECT MAX(timestamp) FROM instant GROUP BY botName,packName,packSize) AND packName LIKE '\%%q\%'%searchExceptions GROUP BY packName ORDER BY packName,timestamp;"
 		#%query = "SELECT strftime('\%Y\%m\%d-\%H:\%M', DATETIME(timestamp, 'unixepoch', 'localtime')) AS timestamp,networkName,channelName,botName,packName,(substr('00000'||(packSize / 1024 / 1024), -5, 5)||' Mb') AS packSize,packNum,substr('000'||packGets, -3, 3) AS packGets FROM instant WHERE timestamp IN (SELECT MAX(timestamp) FROM instant GROUP BY botName,packName,packSize) AND packName MATCH '%q'%searchExceptions ORDER BY packName,timestamp;"
 		#if (%G_hush->%debug) {debug -c query = %query;}
 		
