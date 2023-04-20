@@ -292,68 +292,75 @@ class("hush::searchesimport","widget")
 						# the regexps here are used to decide if a line in the file holds a title string or a year string
 						# titleGrep is a hash that lets you define what we should grep for to find the title name from a URL type's content
 						%titleGrep = $hash("IMDB Lists","^>.*</a>$")
-						%titleGrep{"IMDB Calendar"} = "title.*ref_=rlm\">.*</a>"
+		#				%titleGrep{"IMDB Calendar"} = "title.*ref_=rlm\">.*</a>"
+						%titleGrep{"IMDB Calendar"} = "(<a.*ref_=rlm\">){1}"
 						# yearMatch is a hash that lets you define what we should grep for to find the release year from a URL type's content
 						%yearMatch = $hash("IMDB Lists","<span class=\"lister-item-year text-muted unbold\">.*</span>$")
 						%yearMatch{"IMDB Calendar"} = "</a> (.*)$"
-						%f = $file.readLines($2)
+						%f = $file.read($2)
 						if (%f)
 						{
+		#debug -c "size of file: $length(%f)";
 							if ($3 != "" && $typeOf($3) == string) {%urlType = $3;}
 							else {%urlType = %G_hush->%searchesImport->%coboImportURL->$current();}
 		#					debug -c urlType = %urlType
 							%title = $false
 							# dev note: this code probably only works for Movie titles, so far it's untested with TV shows or other video types.
-							# code written 20180522
-							# loop through file string
-							for (%i = 0; %i < %f[]#; %i++)
+							# original code written 20180522
+							
+							if (%urlType == "IMDB Lists")
 							{
-								# process the data depending on the URL type
-								### dev note: this is where you have to add flow for additional external sources
-								# each source type will need to process the approved title line and convert it into a title string and year string
-								# at this point, we have access to source data in %f%[i] - this is the variable we want to look at
-								if (%urlType == "IMDB Lists")
+								# get the title if its in this line
+								%title = $str.grep(%titleGrep{"IMDB Lists"}, %f[%i], r)
+								if (%title) 
 								{
-									# get the title if its in this line
-									%title = $str.grep(%titleGrep{"IMDB Lists"}, %f[%i], r)
-									if (%title) 
+									# pull the title from the title line
+									%title = $str.rightfromlast($str.chop(%f[%i],4),>)
+									# checks if the next line from the possible title contains the title's year (if there is no year line then this probably isnt actually a title we want)
+									if ($str.match(%yearMatch{"IMDB Lists"},%f[$(%i + 1)],r))
 									{
-										# pull the title from the title line
-										%title = $str.rightfromlast($str.chop(%f[%i],4),>)
-										# checks if the next line from the possible title contains the title's year (if there is no year line then this probably isnt actually a title we want)
-										if ($str.match(%yearMatch{"IMDB Lists"},%f[$(%i + 1)],r))
-										{
-											# get the year for the title
-											%year = $str.rightfromlast($str.chop(%f[$(%i + 1)],8),"(")
-											%G_hushSearchesImport->$append(%title %year);
-										}
+										# get the year for the title
+										%year = $str.rightfromlast($str.chop(%f[$(%i + 1)],8),"(")
+										%G_hushSearchesImport->$append(%title %year);
 									}
 								}
-								elseif (%urlType == "IMDB Calendar")
-								{
-									# get the title if it's in this line
-									%title = $str.grep(%titleGrep{"IMDB Calendar"}, %f[%i], r)
-									if (%title) 
-									{
-		#								debug -c this line has a title: %title
-										# pull the title from the title line
-										%title = $str.rightfromlast($str.chop(%f[%i],11),>)
-		#								debug -c we got this title from the line: %title
-										if ($str.match(%yearMatch{"IMDB Calendar"},%f[%i],r))
-										{
-											# get the year for the title
-											%year = $str.rightfromlast($str.chop(%f[%i],1),"(")
-											%G_hushSearchesImport->$append(%title %year);
-										}
-									}
-								}
-		#						### end flow for external source
-								else
-								{
-									if (%G_hush->%debug) {debug -c urlType '%urlType' is not handled :(;}
-								}
-								%title = $false;
 							}
+							elseif (%urlType == "IMDB Calendar")
+							{
+		# code updated 20230421 by cabji
+								// strip front of HTML page away
+								%f = $str.rightfromfirst(%f,"<section class=\"ipc-page-section ipc-page-section--base\">");
+		#debug -c "size of file: $length(%f)";
+								// strip back of HTML page away
+								%f = $str.lefttofirst(%f,"<button class=\"ipc-scroll-to-top-button")
+		#debug -c "size of file: $length(%f)";
+			
+								// split interesting HTML into array, each element contains a movie title
+								%f = $str.split("<div class=\"ipc-metadata-list-summary-item__tc\">",%f)
+								// loop the array strip/replacing values to get array of movie titles
+								foreach (%val, %f)
+								{
+									%temp = $str.rightfromlast($str.lefttofirst(%val,"</a>"),">")
+									%temp = $str.replace(%temp,"(","")
+									%temp = $str.replace(%temp,")","")
+									%temp = $str.replace(%temp,"&#x27;","'")
+									%titlesArray <+ %temp
+								}
+								// %titlesArray should contain an array filled with movie titles in format: Movie Name 1234
+		debug -c "size of titlesArray: %titlesArray[]#";
+		
+								foreach (%title,%titlesArray)
+								{
+									%G_hushSearchesImport->$append(%title);
+								}
+		
+							}
+		#						### end flow for external source
+							else
+							{
+								if (%G_hush->%debug) {debug -c urlType '%urlType' is not handled :(;}
+							}
+							%title = $false;
 						}
 						else
 						{
@@ -1287,8 +1294,16 @@ class("hush::queueeditor","widget")
 			# check size of downloadHash
 			if ($length(%G_hushDownloadHash) > 0)
 			{
+		
+		// 20210226: creating a temp line that sets G_hush->downloadOrder array to an empty array if it is null here. (chasing a bug)
+				if ($isSet(%G_hush->%downloadOrder) == $false || $typeOf(%G_hush->%downloadOrder) != array)
+				{
+					debug -c "$k(0,4)G_hush->downloadOrder array was empty so creating it as an array$k()";
+					%G_hush->%downloadOrder = $array()
+				}
+		
 				# check if we have the downloadOrder array
-				if ($isSet(%G_hush->%downloadOrder) && $typeOf(%G_hush->%downloadOrder) == array)
+				if ($isSet(%G_hush->%downloadOrder) == $true && $typeOf(%G_hush->%downloadOrder) == array)
 				{
 					%qNum = 0;
 					%stN = 0;
@@ -1340,6 +1355,7 @@ class("hush::queueeditor","widget")
 				{
 					if (%G_hush->%debug) {debug -c we have no downloadOrder array. check data and try again.;}
 				}
+		
 			}
 			else
 			{
@@ -3849,11 +3865,12 @@ class("hush::main","widget")
 		
 		if (@%debug) {debug -c info: building main widget;}
 		
+		
 		@%arrayBotsNoSSL = $array
 		@%common = $new(hush::common, $$, "Hush Common Functions Object")
 		@%dbgI = 0
 		@%debug = $true
-		@%downloadOrder = $array
+		@%downloadOrder = $array()
 		@%hashAutoDownload = $null
 		@%hashAutoDownloadsLog = $hash()
 		@%hashAutoSearchesLog = $hash()
@@ -5711,10 +5728,17 @@ class("hush::instantsearch","widget")
 			if (@$parent->%chbISSSLDCC->$isChecked())
 				%sendStyle = SSEND;
 		
+		#debug 
+			debug -c $k(0,10)Debug Zombie-Meatbag$k() hushDownloadHash size before: $length(%G_hushDownloadHash);
 			%G_hushDownloadHash{"@$parent->%leIS->$text()"}[$length(%G_hushDownloadHash{"@$parent->%leIS->$text()"})] = $new(hush::xdccobject,0,$null,%pack{"networkName"},%pack{"channelName"},%pack{"botName"},%pack{"packName"},%pack{"packNum"},%pack{"packGets"},%pack{"packSize"},Queued,@$parent->%leIS->$text(),%sendStyle,$false)
+		#debug 
+			debug -c $k(0,10)Debug Zombie-Meatbag$k() hushDownloadHash size after: $length(%G_hushDownloadHash);
 			%G_hush->%queueeditor->$refreshQueue()
 			%packSize = $($int($str.chop(%pack{"packSize"},3)) * 1048576)
 			xdcc::hilightsClick %context "%G_hushOptions{"FCW"}" %sendStyle %pack{"botName"} %pack{"packName"} %pack{"packNum"} %pack{"packGets"} %packSize @$parent->%leIS->$text() $($length(%G_hushDownloadHash{"@$parent->%leIS->$text()"}) - 1)
+			// send focus back to the search query input and select all the text in it
+			@$parent->%leIS->$selectAll();
+			@$parent->%leIS->$setFocus();
 		}
 		
 		# enter key pressed for lineedit leIS
