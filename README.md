@@ -3,6 +3,10 @@ hush development
 
 <h2>ToDo</h2>
 <ul>
+    <li>Media Library</li>
+    <ul>
+        <li>Add support to deal with multiple media library locations with the same media category for using auto-moving of incoming media to the appropriate media library location.</li>
+    </ul>
     <li>Transfer Management</li>
     <ul>
         <li>Build a system to track pending requested downloads and decide when a transfer request has had long enough and cancel it.</li>
