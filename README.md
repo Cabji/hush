@@ -6,6 +6,8 @@ hush development
     <li>Media Library</li>
     <ul>
         <li>Add support to deal with multiple media library locations with the same media category for using auto-moving of incoming media to the appropriate media library location.</li>
+        <li>Add Linux specific support to deal with moving incoming media to appropriate media library location.</li>
+        <li>Add Linux specific support to deal with extracting incoming media from archives (zip/tar etc).</li>
     </ul>
     <li>Transfer Management</li>
     <ul>
