@@ -115,58 +115,79 @@ alias(xdcc::doNextAutoDownload)
 
 alias(xdcc::extractArchive)
 {
-	# this alias is a placeholder.
+	# written 20231020 by cabji
 	
-	/* old code from events::onDCCFileTransferSuccess
+	%filename = $0
+	%hash_extHandlersLinux = $hash("tar", "tar -xvf", "zip", "unzip");
+	%incomingDir = %G_hushOptions{"MediaIncoming"}
 	
-	
-	
-	
-	
-	
-			### extract file if autoExtract true and it is a .tar
-			if ($str.rightfromlast(%o1->$getInfo(filename),.) == tar || $str.rightfromlast(%o1->$getInfo(filename),.) == rar)
-			{
-				debug -c the file downloaded is a tar or rar extension;
-				if (%G_hushOptions{"TransfersAutoExtract"} == $true)
-				{
-					debug -c Hush is set to do automatic archive extractions...;
-					%fileType = tar
-	### this code should actualy be ran when the MediaIncoming value is set in options. for now, we will have it in here as media library isnt ready yet.
-					# we need to check if 7z.exe is available
-					if ($file.exists($file.localdir(config/Hush/utils/7z.exe)))
-					{
-						debug -c 7z.exe is available
-						
-					}
-					else
-					{
-						debug -c 7z.exe is not available. Can't do file extraction.;
-						halt;
-					}
-				}
-				else
-				{
-					debug -c Hush is not set to auto extract files. See Options -> Transfers -> Automatically extract archives (tick this option);
-				}
-			}
-			else
-			{
-				debug -c File is not a TAR or RAR archive.;
-			}
-	
-	
-	
-	
-	
-	
-	} # end if exists
+	//debug -c %hash_extHandlersLinux
 	
 	if ($system.osname == "Linux")
 	{
-		%tar = tar
+		// set extHandlerKeys based on our OS
+		%arr_extHandlersKeys = $keys(%hash_extHandlersLinux)
+		// get filetype extension from filename
+		%ext = $str.rightfromlast(%filename,".")
+	
+		// define variables here to get the scope we need later on
+		%pid = $null;
+		%stdout = $null;
+		%stderr = $null;
+		%termcode = $null;
+		
+		// check if ext is in supported extensions
+		if ($str.contains(%arr_extHandlersKeys,%ext))
+		{
+			// now we can execute on the filename using the handler command
+			//if (%G_hush->%debug) {debug -c "\n$k(1,9)Success$k() - Found a handler for this archive type. The command we would issue to extract the file is: \n\t%hash_extHandlersLinux{%ext} %filename";}
+			// execute the handler command and enter the callback codeblock
+			exec -e -x -t -b ("cd %incomingDir; %hash_extHandlersLinux{%ext} %filename",%filename)
+			{
+				if ($0 == "started") {%:pid = $1;}
+				if ($0 == "stdout") {%:stdout .= $1;}
+				if ($0 == "stderr") {%:stderr .= $1;}
+				if ($0 == "terminated")
+				{
+					%speak = $(!%G_hushOptions{"NoiseNone"})
+					%:termcode = $1;
+					%:filename = $2;
+					//echo "PID: %:pid\nOutput:\n%:stdout\nErrors:\n\t%:stderr\nExit Code: %:termcode";
+				}
+	
+				if (%speak)
+				{
+					// init FCW for output
+					%G_hush->$doFCW();
+					rebind $window(%G_hushOptions{"FCW"}); 
+				}
+	
+				// check the termcode. 0 = success, anything else = failed
+				if ($isNumeric(%:termcode) && $int(%:termcode) == 0)
+				{
+					if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,9)Success$k() - Automatic extraction of %:filename was successful.";}
+					if (%G_hush->%debug) {debug -c "$k(1,9)Success$k() - Automatic extraction of %:filename was successful.\nStdout:%:stdout";}
+					// after successful extraction, we can automatically remove the source file if the user has the option turned on
+					xdcc::removeArchive %:filename
+				}
+				if (%:termcode != "0") 
+				{
+					if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,4)Failed$k() - Automatic extraction of %:filename failed.\nOutput was:\n\t%:stdout";}
+					if (%G_hush->%debug) {debug -c "$k(1,4)Failed$k() - Automatic extraction of %:filename failed.\nOutput was:\n\t%:stdout";}
+				}
+			}
+		}
+		else
+		{
+			// no handler for this extension type found for this OS
+			if (%G_hush->%debug) {debug -c "\n$k(1,7)Warning$k() - No program is configured to handle extracting this type of file. Data received was: \n\t$b()Filename:$b() %filename\n\t$b()Extension:$b() %ext";}
+			if (%speak) {%G_hush->$doFCW(); rebind $window(%G_hushOptions{"FCW"}); echo -w=$window(%G_hushOptions{"FCW"}) "\n$k(1,7)Warning$k() - No program is configured to handle extracting this type of file. Data received was: \n\t$b()Filename:$b() %filename\n\t$b()Extension:$b() %ext";}
+		}
 	}
 	
+	/* old code from events::onDCCFileTransferSuccess
+	if (%G_hushOptions{"TransfersAutoExtract"} == $true)
+	if ($file.exists($file.localdir(config/Hush/utils/7z.exe)))
 	*/
 }
 
@@ -575,3 +596,19 @@ alias(xdcc::moveToLibrary)
 }
 
 
+alias(xdcc::removeArchive)
+{
+	# first written 20231021 by cabji
+	
+	%filename = $0
+	%optionForAutoRemoveArchive = $true
+	// ^ this is a placeholder variable for development, change to Hush option value when alias is functional
+	
+	// this alias is used to automatically remove an archive after it has had its contents extracted
+	// it is usually called from the xdcc::extractArchive alias.
+	
+	if (%optionForAutoRemoveArchive)
+	{
+		
+	}
+}
