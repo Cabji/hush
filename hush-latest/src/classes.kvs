@@ -1890,6 +1890,10 @@ class("hush::options","widget")
 		@%cbSSL = $new(checkbox, @%wgtPageBasic)
 		@%cbSSL->$setText("SSL Send Option in Found Content Window")
 		@%cbSSL->$setTooltip("Display SSL DCC send links in the FCW. SSL for automatic downloads is in the Trasnfers tab.<br/>SSLDCC is only supported by mg afaik.")
+		# button for processing Incoming folder files
+		@%btnProcessIncoming = $new(button, @%wgtPageBasic)
+		@%btnProcessIncoming->$setText("Process Incoming Folder Files")
+		@%btnProcessIncoming->$setTooltip("Runs archive extraction and removal of successfully extracted archive files.")
 		
 		# label heading - noise
 		@%lblHeadingNoise = $new(label, @%wgtPageBasic)
@@ -1967,14 +1971,15 @@ class("hush::options","widget")
 		@%lPageBasic->$addMultiCellWidget(@%lblFCW,			 1,1,0,0)
 		@%lPageBasic->$addMultiCellWidget(@%leFCW,				 1,1,1,3)
 		@%lPageBasic->$addMultiCellWidget(@%cbSSL,				 2,2,0,3)
-		@%lPageBasic->$addMultiCellWidget(@%lblHeadingNoise,		 3,3,0,3)
-		@%lPageBasic->$addMultiCellWidget(@%cbNoiseNone,		 4,4,0,3)
-		@%lPageBasic->$addMultiCellWidget(@%cbSWC,				 5,5,0,3)
-		@%lPageBasic->$addMultiCellWidget(@%cbZNCPush,			 6,6,0,3)
-		@%lPageBasic->$addMultiCellWidget(@%cbZNCPreventQuery,	 7,7,0,3)
-		@%lPageBasic->$addMultiCellWidget(@%btnESTF,			 8,8,0,1)
-		@%lPageBasic->$addMultiCellWidget(@%btnISFF,			 8,8,2,3)
-		@%lPageBasic->$addMultiCellWidget(@%btnCHS,			 9,9,0,3)
+		@%lPageBasic->$addMultiCellWidget(@%btnProcessIncoming,	 3,3,0,3)
+		@%lPageBasic->$addMultiCellWidget(@%lblHeadingNoise,		 4,4,0,3)
+		@%lPageBasic->$addMultiCellWidget(@%cbNoiseNone,		 5,5,0,3)
+		@%lPageBasic->$addMultiCellWidget(@%cbSWC,				 6,6,0,3)
+		@%lPageBasic->$addMultiCellWidget(@%cbZNCPush,			 7,7,0,3)
+		@%lPageBasic->$addMultiCellWidget(@%cbZNCPreventQuery,	 8,8,0,3)
+		@%lPageBasic->$addMultiCellWidget(@%btnESTF,			 9,9,0,1)
+		@%lPageBasic->$addMultiCellWidget(@%btnISFF,			 9,9,2,3)
+		@%lPageBasic->$addMultiCellWidget(@%btnCHS,			 10,10,0,3)
 		
 		### Transfers Tab ###
 		@%wgtPageTransfers = $new(widget, 0, "options Transfer Widget for tab")
@@ -2081,9 +2086,13 @@ class("hush::options","widget")
 		@%chbTransfersDoneMsg->$setTooltip("Toggle on/off whether Hush should output a message about when a transfer finishes.<br/>This includes both failed and successful transfers, and will send a message via ZNC if the ZNC option is ticked in Basic settings.")
 		# automatic archive extraction on complete transfer
 		@%chbTransfersAutoExtract = $new(checkbox, @%wgtPageTransfers)
-		@%chbTransfersAutoExtract->$setEnabled($false)
-		@%chbTransfersAutoExtract->$setText("Automatically extract archives (TAR & RAR files) [doesn't actually work in this version]")
-		@%chbTransfersAutoExtract->$setTooltip("Toggle on/off whether Hush should automatically extract TAR & RAR files on completed download.")
+		//@%chbTransfersAutoExtract->$setEnabled($false)
+		@%chbTransfersAutoExtract->$setText("Automatically extract archives (TAR,RAR,ZIP files)")
+		@%chbTransfersAutoExtract->$setTooltip("Toggle on/off whether Hush should automatically extract archive files on completed download.")
+		# automatic archive extraction on complete transfer
+		@%chbTransfersAutoRemove = $new(checkbox, @%wgtPageTransfers)
+		@%chbTransfersAutoRemove->$setText("Automatically remove archives after extraction")
+		@%chbTransfersAutoRemove->$setTooltip("Toggle on/off whether Hush should automatically remove archive files after automatic extraction.")
 		# automatic move file to library
 		@%chbTransfersAutoMove = $new(checkbox, @%wgtPageTransfers)
 		@%chbTransfersAutoMove->$setText("Automatically move media files to Library location [only works on Windows OS at the moment]")
@@ -2123,6 +2132,8 @@ class("hush::options","widget")
 		else { @%chbTransfersDoneMsg->$setChecked($true); }
 		if (%G_hushOptions{"TransfersAutoExtract"} != "") { @%chbTransfersAutoExtract->$setChecked(%G_hushOptions{"TransfersAutoExtract"}); }
 		else { @%chbTransfersAutoExtract->$setChecked($true); }
+		if (%G_hushOptions{"TransfersAutoRemove"} != "") { @%chbTransfersAutoRemove->$setChecked(%G_hushOptions{"TransfersAutoRemove"}); }	
+		else { @%chbTransfersAutoRemove->$setChecked($true); }
 		if (%G_hushOptions{"TransfersAutoMove"} != "") { @%chbTransfersAutoMove->$setChecked(%G_hushOptions{"TransfersAutoMove"}); }
 		else { @%chbTransfersAutoMove->$setChecked($true); }
 		if (%G_hushOptions{"TransfersAutoMCUpdate"} != "") { @%chbTransfersAutoMCUpdate->$setChecked(%G_hushOptions{"TransfersAutoMCUpdate"}); }
@@ -2153,8 +2164,9 @@ class("hush::options","widget")
 		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersRmSearchTerm,			13,13,0,2)
 		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersDoneMsg,				14,14,0,2)
 		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoExtract,			15,15,0,2)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoMove,				16,16,0,2)
-		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoMCUpdate,			17,17,0,2)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoRemove,				16,16,0,2)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoMove,				17,17,0,2)
+		@%lPageTransfers->$addMultiCellWidget(@%chbTransfersAutoMCUpdate,			18,18,0,2)
 		
 		### Transfer Priority Tab ###
 		@%wgtPageTransferPriority = $new(widget, 0, "options Transfer Priority Widget for tab")
@@ -2385,6 +2397,7 @@ class("hush::options","widget")
 		@%l0->$addMultiCellWidget(@%lblTitle,		 0,0,0,0)
 		@%l0->$addMultiCellWidget(@%tabw,		 1,1,0,0);
 		
+		objects.connect @%btnProcessIncoming clicked %G_hush doProcessIncoming
 		objects.connect @%btnISPSNow clicked %G_hush doPassiveSearch
 		objects.connect @%btnISReset clicked $$ fnISReset
 		objects.connect @%sbTransfersDCCTimeout valueChanged $$ slotTransfersDCCTimeoutChange
@@ -2442,6 +2455,7 @@ class("hush::options","widget")
 			%G_hushOptions{"SSL"} 							= @%cbSSL->$isChecked()
 			%G_hushOptions{"TransfersAutoEpUp"} 					= @%chbTransfersAutoEpUp->$isChecked()
 			%G_hushOptions{"TransfersAutoExtract"} 				= @%chbTransfersAutoExtract->$isChecked()
+			%G_hushOptions{"TransfersAutoRemove"} 				= @%chbTransfersAutoRemove->$isChecked()
 			%G_hushOptions{"TransfersAutoMCUpdate"} 				= @%chbTransfersAutoMCUpdate->$isChecked()
 			%G_hushOptions{"TransfersAutoMove"} 					= @%chbTransfersAutoMove->$isChecked()
 			%G_hushOptions{"TransfersAutoStopPassive"} 			= @%chbTransfersAutoStopPassiveToggle->$isChecked()
@@ -3499,6 +3513,18 @@ class("hush::main","widget")
 			}
 		}
 		if (%total > 0) {return %total;} else {return $false;}
+	}
+	
+	function doProcessIncoming(Processes the Hush incoming directory contents and automatically extracts/removes archive files.)
+	{
+		# first written 20231022 by cabji
+		
+		// this function is triggered when the user clicks on the Hush -> Options -> Basic -> Process Incoming buttonctl 
+		
+		debug -c You clicked the buttonctl 
+		// get list of all archive files from the incoming directory
+		
+		%incomingDir = %G_hushOptions{"MediaIncoming"}
 	}
 	
 	function doPassiveSearch($0 - boolean: if true, means the passive search was triggered automatically. false means it was triggered manually.)

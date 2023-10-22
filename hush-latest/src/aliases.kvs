@@ -117,16 +117,21 @@ alias(xdcc::extractArchive)
 {
 	# written 20231020 by cabji
 	
-	%filename = $0
-	%hash_extHandlersLinux = $hash("tar", "tar -xvf", "zip", "unzip");
-	%incomingDir = %G_hushOptions{"MediaIncoming"}
+	// this alias will attempt to extract an archive using a configured extraction tool
+	// add entries to the %hash_extHandlersLinux hash to handle different file types
+	// really should've written it better for multi-os support.
+	// pass this alias the filename (absolute path) to be extracted. 
+	// it will extract the file to whatever directory Hush has set as the incoming directory
 	
-	//debug -c %hash_extHandlersLinux
+	%filename = $file.fixpath($0)
+	%osEnv = $system.osname()
+	%hash_extHandlers{%osEnv} = $hash("tar", "tar -xvf", "zip", "unzip");
+	%incomingDir = $file.fixpath(%G_hushOptions{"MediaIncoming"})
 	
 	if ($system.osname == "Linux")
 	{
 		// set extHandlerKeys based on our OS
-		%arr_extHandlersKeys = $keys(%hash_extHandlersLinux)
+		%arr_extHandlersKeys = $keys(%hash_extHandlers{%osEnv})
 		// get filetype extension from filename
 		%ext = $str.rightfromlast(%filename,".")
 	
@@ -139,10 +144,11 @@ alias(xdcc::extractArchive)
 		// check if ext is in supported extensions
 		if ($str.contains(%arr_extHandlersKeys,%ext))
 		{
+			if (%G_hush->%debug) {debug -c "\n$k(1,3) Data OK $k() - Valid configured extractor found for %ext files.";}
 			// now we can execute on the filename using the handler command
 			//if (%G_hush->%debug) {debug -c "\n$k(1,9)Success$k() - Found a handler for this archive type. The command we would issue to extract the file is: \n\t%hash_extHandlersLinux{%ext} %filename";}
 			// execute the handler command and enter the callback codeblock
-			exec -e -x -t -b ("cd %incomingDir; %hash_extHandlersLinux{%ext} %filename",%filename)
+			exec -e -x -t -b ("cd %incomingDir; %hash_extHandlers{%osEnv}{%ext} %filename",%filename)
 			{
 				if ($0 == "started") {%:pid = $1;}
 				if ($0 == "stdout") {%:stdout .= $1;}
@@ -166,14 +172,18 @@ alias(xdcc::extractArchive)
 				if ($isNumeric(%:termcode) && $int(%:termcode) == 0)
 				{
 					if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,9)Success$k() - Automatic extraction of %:filename was successful.";}
-					if (%G_hush->%debug) {debug -c "$k(1,9)Success$k() - Automatic extraction of %:filename was successful.\nStdout:%:stdout";}
-					// after successful extraction, we can automatically remove the source file if the user has the option turned on
-					xdcc::removeArchive %:filename
+					if (%G_hush->%debug) {debug -c "\n\t $k(1,9)Success$k() - Automatic extraction of %:filename was successful.\n\t\tStdout:%:stdout";}
+	
+					// after successful extraction, automatically remove the source archive if the user has the option turned on
+					if (%G_hushOptions{"TransfersAutoRemove"} == $true)
+					{
+						xdcc::removeArchive %:filename
+					}
 				}
 				if (%:termcode != "0") 
 				{
 					if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,4)Failed$k() - Automatic extraction of %:filename failed.\nOutput was:\n\t%:stdout";}
-					if (%G_hush->%debug) {debug -c "$k(1,4)Failed$k() - Automatic extraction of %:filename failed.\nOutput was:\n\t%:stdout";}
+					if (%G_hush->%debug) {debug -c "\n\t $k(1,4)Failed$k() - Automatic extraction of %:filename failed.\n\t\tOutput was:\n\t\t\t%:stdout";}
 				}
 			}
 		}
@@ -600,15 +610,64 @@ alias(xdcc::removeArchive)
 {
 	# first written 20231021 by cabji
 	
-	%filename = $0
-	%optionForAutoRemoveArchive = $true
-	// ^ this is a placeholder variable for development, change to Hush option value when alias is functional
-	
 	// this alias is used to automatically remove an archive after it has had its contents extracted
 	// it is usually called from the xdcc::extractArchive alias.
+	// pass this alias the filename (use absolute path) as the first parameter.
+	
+	%filename = $file.fixpath($0)
+	%optionForAutoRemoveArchive = $true
+	// ^ this is a placeholder variable for development, change to Hush option value when alias is functional
+	%hash_rmCommand{Linux} = "rm -v"
+	%arr_validOS = $keys(%hash_rmCommand)
+	%osEnv = $system.osname()
+	%speak = $(!%G_hushOptions{"NoiseNone"})
 	
 	if (%optionForAutoRemoveArchive)
 	{
-		
+		if ($str.contains(%arr_validOS, %osEnv))
+		{
+			if (%G_hush->%debug) {debug -c "\n$k(1,3) Data OK $k() - Valid configured OS found.";}
+			// valid os so let's try to remove the archive file
+			exec -e -x -t -b ("%hash_rmCommand{%osEnv} %filename", %filename)
+			{
+				if ($0 == "started") {%:pid = $1;}
+				if ($0 == "stdout") {%:stdout .= $1;}
+				if ($0 == "stderr") {%:stderr .= $1;}
+				if ($0 == "terminated")
+				{
+					%speak = $(!%G_hushOptions{"NoiseNone"})
+					%:termcode = $1;
+					%:filename = $2;
+					//echo "PID: %:pid\nOutput:\n%:stdout\nErrors:\n\t%:stderr\nExit Code: %:termcode";
+				}
+				
+				if (%speak)
+				{
+					// init FCW for output
+					%G_hush->$doFCW();
+					rebind $window(%G_hushOptions{"FCW"}); 
+				}
+	
+				// check the termcode. 0 = success, anything else = failed
+				if ($isNumeric(%:termcode) && $int(%:termcode) == 0)
+				{
+					if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,9)Success$k() - Automatic archive removal of %:filename was successful.";}
+					if (%G_hush->%debug) {debug -c "\n\t $k(1,9)Success$k() - Automatic archive removal of %:filename was successful.\n\t\tStdout: %:stdout";}
+				}
+				if (%:termcode != "0") 
+				{
+					if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,4)Failed$k() - Automatic archive removal of %:filename failed.\nOutput was:\n\t%:stdout";}
+					if (%G_hush->%debug) {debug -c "\n\t $k(1,4)Failed$k() - Automatic archive removal of %:filename failed.\n\t\tOutput was:\n\t\t\t%:stdout";}
+				}
+			}
+		}
+		else
+		{
+			// no configuration for this OS
+			if (%G_hush->%debug) {debug -c "\n$k(1,7)Warning$k() - No program is configured to handle removing this type of file for this OS.\nData received was: \n\t$b()OS:$b() %osEnv\n\t$b()Filename:$b() %filename\n\t $k(1,4) Failed $k() - Automatic removal of file failed.";}
+			if (%speak) {%G_hush->$doFCW(); rebind $window(%G_hushOptions{"FCW"}); echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,7)Warning$k() - Automatic archive removal: There is no configurartion for your OS: %osEnv";}
+		}
 	}
 }
+
+
