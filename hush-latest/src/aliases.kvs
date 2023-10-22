@@ -125,80 +125,71 @@ alias(xdcc::extractArchive)
 	
 	%filename = $file.fixpath($0)
 	%osEnv = $system.osname()
-	%hash_extHandlers{%osEnv} = $hash("tar", "tar -xvf", "zip", "unzip");
+	%hash_extHandlers{Linux} = %G_hushOptions{"extHandlers"}{Linux}
 	%incomingDir = $file.fixpath(%G_hushOptions{"MediaIncoming"})
 	
-	if ($system.osname == "Linux")
-	{
-		// set extHandlerKeys based on our OS
-		%arr_extHandlersKeys = $keys(%hash_extHandlers{%osEnv})
-		// get filetype extension from filename
-		%ext = $str.rightfromlast(%filename,".")
+	// set extHandlerKeys based on our OS
+	%arr_extHandlersKeys = $keys(%hash_extHandlers{%osEnv})
+	// get filetype extension from filename
+	%ext = $str.rightfromlast(%filename,".")
 	
-		// define variables here to get the scope we need later on
-		%pid = $null;
-		%stdout = $null;
-		%stderr = $null;
-		%termcode = $null;
+	// define variables here to get the scope we need later on
+	%pid = $null;
+	%stdout = $null;
+	%stderr = $null;
+	%termcode = $null;
 		
-		// check if ext is in supported extensions
-		if ($str.contains(%arr_extHandlersKeys,%ext))
+	// check if ext is in supported extensions
+	if ($str.contains(%arr_extHandlersKeys,%ext))
+	{
+		if (%G_hush->%debug) {debug -c "\n$k(1,3) Data OK $k() - Valid configured extractor found for %ext files.";}
+		// now we can execute on the filename using the handler command
+		//if (%G_hush->%debug) {debug -c "\n$k(1,9)Success$k() - Found a handler for this archive type. The command we would issue to extract the file is: \n\t%hash_extHandlersLinux{%ext} %filename";}
+		// execute the handler command and enter the callback codeblock
+		exec -e -x -t -b ("cd %incomingDir; %hash_extHandlers{%osEnv}{%ext} '%filename'",%filename)
 		{
-			if (%G_hush->%debug) {debug -c "\n$k(1,3) Data OK $k() - Valid configured extractor found for %ext files.";}
-			// now we can execute on the filename using the handler command
-			//if (%G_hush->%debug) {debug -c "\n$k(1,9)Success$k() - Found a handler for this archive type. The command we would issue to extract the file is: \n\t%hash_extHandlersLinux{%ext} %filename";}
-			// execute the handler command and enter the callback codeblock
-			exec -e -x -t -b ("cd %incomingDir; %hash_extHandlers{%osEnv}{%ext} %filename",%filename)
+			if ($0 == "started") {%:pid = $1;}
+			if ($0 == "stdout") {%:stdout .= $1;}
+			if ($0 == "stderr") {%:stderr .= $1;}
+			if ($0 == "terminated")
 			{
-				if ($0 == "started") {%:pid = $1;}
-				if ($0 == "stdout") {%:stdout .= $1;}
-				if ($0 == "stderr") {%:stderr .= $1;}
-				if ($0 == "terminated")
-				{
-					%speak = $(!%G_hushOptions{"NoiseNone"})
-					%:termcode = $1;
-					%:filename = $2;
-					//echo "PID: %:pid\nOutput:\n%:stdout\nErrors:\n\t%:stderr\nExit Code: %:termcode";
-				}
+				%speak = $(!%G_hushOptions{"NoiseNone"})
+				%:termcode = $1;
+				%:filename = $2;
+				//echo "PID: %:pid\nOutput:\n%:stdout\nErrors:\n\t%:stderr\nExit Code: %:termcode";
+			}
+			if (%speak)
+			{
+				// init FCW for output
+				%G_hush->$doFCW();
+				rebind $window(%G_hushOptions{"FCW"}); 
+			}
 	
-				if (%speak)
-				{
-					// init FCW for output
-					%G_hush->$doFCW();
-					rebind $window(%G_hushOptions{"FCW"}); 
-				}
+			// check the termcode. 0 = success, anything else = failed
+			if ($isNumeric(%:termcode) && $int(%:termcode) == 0)
+			{
+				if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,9)Success$k() - Automatic extraction of %:filename was successful.";}
+				if (%G_hush->%debug) {debug -c "\n\t $k(1,9)Success$k() - Automatic extraction of %:filename was successful.\n\t\tStdout:%:stdout";}
 	
-				// check the termcode. 0 = success, anything else = failed
-				if ($isNumeric(%:termcode) && $int(%:termcode) == 0)
+				// after successful extraction, automatically remove the source archive if the user has the option turned on
+				if (%G_hushOptions{"TransfersAutoRemove"} == $true)
 				{
-					if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,9)Success$k() - Automatic extraction of %:filename was successful.";}
-					if (%G_hush->%debug) {debug -c "\n\t $k(1,9)Success$k() - Automatic extraction of %:filename was successful.\n\t\tStdout:%:stdout";}
-	
-					// after successful extraction, automatically remove the source archive if the user has the option turned on
-					if (%G_hushOptions{"TransfersAutoRemove"} == $true)
-					{
-						xdcc::removeArchive %:filename
-					}
-				}
-				if (%:termcode != "0") 
-				{
-					if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,4)Failed$k() - Automatic extraction of %:filename failed.\nOutput was:\n\t%:stdout";}
-					if (%G_hush->%debug) {debug -c "\n\t $k(1,4)Failed$k() - Automatic extraction of %:filename failed.\n\t\tOutput was:\n\t\t\t%:stdout";}
+					xdcc::removeArchive %:filename
 				}
 			}
-		}
-		else
-		{
-			// no handler for this extension type found for this OS
-			if (%G_hush->%debug) {debug -c "\n$k(1,7)Warning$k() - No program is configured to handle extracting this type of file. Data received was: \n\t$b()Filename:$b() %filename\n\t$b()Extension:$b() %ext";}
-			if (%speak) {%G_hush->$doFCW(); rebind $window(%G_hushOptions{"FCW"}); echo -w=$window(%G_hushOptions{"FCW"}) "\n$k(1,7)Warning$k() - No program is configured to handle extracting this type of file. Data received was: \n\t$b()Filename:$b() %filename\n\t$b()Extension:$b() %ext";}
+			if (%:termcode != "0") 
+			{
+				if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,4)Failed$k() - Automatic extraction of %:filename failed.\nOutput was:\n\t%:stdout";}
+				if (%G_hush->%debug) {debug -c "\n\t $k(1,4)Failed$k() - Automatic extraction of %:filename failed.\n\t\tOutput was:\n\t\t\t%:stdout";}
+			}
 		}
 	}
-	
-	/* old code from events::onDCCFileTransferSuccess
-	if (%G_hushOptions{"TransfersAutoExtract"} == $true)
-	if ($file.exists($file.localdir(config/Hush/utils/7z.exe)))
-	*/
+	else
+	{
+		// no handler for this extension type found for this OS
+		if (%G_hush->%debug) {debug -c "\n$k(1,7)Warning$k() - No program is configured to handle extracting this type of file. Data received was: \n\t$b()Filename:$b() %filename\n\t$b()Extension:$b() %ext";}
+		if (%speak) {%G_hush->$doFCW(); rebind $window(%G_hushOptions{"FCW"}); echo -w=$window(%G_hushOptions{"FCW"}) "\n$k(1,7)Warning$k() - No program is configured to handle extracting this type of file. Data received was: \n\t$b()Filename:$b() %filename\n\t$b()Extension:$b() %ext";}
+	}
 }
 
 
@@ -628,7 +619,7 @@ alias(xdcc::removeArchive)
 		{
 			if (%G_hush->%debug) {debug -c "\n$k(1,3) Data OK $k() - Valid configured OS found.";}
 			// valid os so let's try to remove the archive file
-			exec -e -x -t -b ("%hash_rmCommand{%osEnv} %filename", %filename)
+			exec -e -x -t -b ("%hash_rmCommand{%osEnv} '%filename'", %filename)
 			{
 				if ($0 == "started") {%:pid = $1;}
 				if ($0 == "stdout") {%:stdout .= $1;}
