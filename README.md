@@ -1,13 +1,27 @@
 <h1>Hush ReadMe</h1>
 hush development
 
+<h2>Latest Update</h2>
+<h3>20231022</h3>
+<p>Added aliases to: 
+    <ul>
+        <li>Auto-extract archive files after auto-download</li>
+        <li>Auto-remove archive files after successful auto-extraction</li>
+    </ul>
+</p>
+<p>Added new widgets to: 
+    <ul>
+        <li>Control toggle settings for the above</li>
+        <li>Allow manual archive processing of archives in the incoming directory (Hush -> Options -> Basic -> Process Incoming Folder Files)</li>
+    </ul>
+</p>
+
 <h2>ToDo</h2>
 <ul>
     <li>Media Library</li>
     <ul>
         <li>Add support to deal with multiple media library locations with the same media category for using auto-moving of incoming media to the appropriate media library location.</li>
         <li>Add Linux specific support to deal with moving incoming media to appropriate media library location.</li>
-        <li>Add Linux specific support to deal with extracting incoming media from archives (zip/tar etc).</li>
     </ul>
     <li>Transfer Management</li>
     <ul>
