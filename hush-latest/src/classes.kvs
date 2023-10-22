@@ -975,6 +975,54 @@ class("hush::library","object")
 		*/
 	}
 	
+	function fnDetectMediaType(This function attempts to auto detect the type of a media file - returns false if no category is found that matches the filename)
+	{
+		# first written 20231022 by cabji
+		
+		// function to auto detect what a file is
+		// first parameter = filename to operate on
+		
+		%filename = $0
+		
+		// you can define new categories here, order doesn't matter
+		%hash_mediaTypes{TV}			= $array();
+		%hash_mediaTypes{Movies}		= $array();
+		%hash_mediaTypes{Music}		= $array();
+		%hash_mediaTypes{AudioBooks}	= $array();
+		%hash_mediaTypes{eBooks}		= $array();
+		
+		// define search regex values
+		// order, on a per ctegory basis matters here. whatever should be checked first should be first in the array
+		%hash_mediaTypes{Movies}		<+ ".*\.(19\\d\\d|20\\d\\d)\..*"
+		%hash_mediaTypes{TV}			<+ ".*\.(S\\d\\dE\\d\\d)\..*"
+		%hash_mediaTypes{Music}		<+ ".*\.mp3\..*kbps"
+		%hash_mediaTypes{Music}		<+ ".*kbps.*mp3*"
+		%hash_mediaTypes{Music}		<+ "mp3.rar"
+		%hash_mediaTypes{Music}		<+ "discography"
+		%hash_mediaTypes{AudioBooks}	<+ "audiobook"
+		%hash_mediaTypes{AudioBooks}	<+ "\.abook\."
+		
+		// define the catKeys here manually to control the order of precedence
+		%catKeys = $array("Movies","TV","Music","AudioBooks");
+		
+		%result = $false
+		
+		// loop through hash_mediaTypes and their inner arrays checking against filename until we find one that matches
+		foreach (%cat, %catKeys)
+		{
+			foreach (%regex, %hash_mediaTypes{%cat})
+			{
+				if ($str.match(%regex, %filename, "r"))
+				{
+					%result = %cat
+					break;
+				}
+			}
+		}
+		
+		return %result
+	}
+	
 	function fnFindLatest(this function tries to find the latest item in a collection)
 	{
 		# this function will try to find the "Latest" item in a collection of items.
