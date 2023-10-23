@@ -985,7 +985,7 @@ class("hush::library","object")
 		%filename = $0
 		
 		// you can define new categories here, order doesn't matter
-		%hash_mediaTypes{TV}			= $array();
+		%hash_mediaTypes{"TV Shows"}	= $array();
 		%hash_mediaTypes{Movies}		= $array();
 		%hash_mediaTypes{Music}		= $array();
 		%hash_mediaTypes{AudioBooks}	= $array();
@@ -994,7 +994,7 @@ class("hush::library","object")
 		// define search regex values
 		// order, on a per ctegory basis matters here. whatever should be checked first should be first in the array
 		%hash_mediaTypes{Movies}		<+ ".*\.(19\\d\\d|20\\d\\d)\..*"
-		%hash_mediaTypes{TV}			<+ ".*\.(S\\d\\dE\\d\\d)\..*"
+		%hash_mediaTypes{"TV Shows"}	<+ ".*\.(S\\d\\dE\\d\\d)\..*"
 		%hash_mediaTypes{Music}		<+ ".*\.mp3\..*kbps"
 		%hash_mediaTypes{Music}		<+ ".*kbps.*mp3*"
 		%hash_mediaTypes{Music}		<+ "mp3.rar"
@@ -1003,7 +1003,7 @@ class("hush::library","object")
 		%hash_mediaTypes{AudioBooks}	<+ "\.abook\."
 		
 		// define the catKeys here manually to control the order of precedence
-		%catKeys = $array("Movies","TV","Music","AudioBooks");
+		%catKeys = $array("Movies","TV Shows","Music","AudioBooks");
 		
 		%result = $false
 		
@@ -1056,6 +1056,34 @@ class("hush::library","object")
 		%G_hush->%libraryoptions->%lviMediaEntries[%i]->$text(1) will get the media type
 		%G_hush->%libraryoptions->%lviMediaEntries[%i]->$text(2) will get the base path
 		*/
+	}
+	
+	function fnGetMediaLocationByType(This function will return an array of base paths media locations fetched by using a Media Type category)
+	{
+		# first written 20231023 by cabji
+		
+		// this function takes a Media Type value as first parameter and will return an array of base paths
+		// (media locations) if available otherwise returns false.
+		
+		%s_mediaType = $0
+		%results = $false
+		
+		// the media locations are held in: %G_hush->%libraryoptions->%lviMediaEntries[%i]->$text(2)
+		// the media types are held in: %G_hush->%libraryoptions->%lviMediaEntries[%i]->$text(1)
+		
+		// loop the %G_hush->%libraryoptions->%lviMediaEntries array and find which entries match the s_mediaType
+		for (%i = 0; %i < %G_hush->%libraryoptions->%lviMediaEntries[]#; %i++)
+		{
+			if (%G_hush->%libraryoptions->%lviMediaEntries[%i]->$text(1) == %s_mediaType)
+			{
+				// change results to array if req'd
+				if ($typeOf(%results) != "array") {%results = $array;}
+				// add media location to results
+				%results <+ %G_hush->%libraryoptions->%lviMediaEntries[%i]->$text(2);
+			}
+		}	
+		
+		return %results
 	}
 	
 	function fnScanDirs($0 = path to scan, $1 - csv filetypes)
@@ -1462,6 +1490,17 @@ class("hush::libraryoptions","widget")
 		@%btnMediaRm->$setText("Remove")
 		@%btnMediaRm->$setTooltip("Click to remove the higlighted entry from the library")
 		
+		# label fill method
+		@%lblFillMethod = $new(label, $$)
+		@%lblFillMethod->$setText("<hr><b>Fill Method</b>")
+		@%lblFillMethod->$setAlignment(Left)
+		
+		# combobox (dropdown) for fill method
+		@%coboFillMethod = $new(combobox, $$)
+		@%coboFillMethod->$insertItem("Sequential")
+		@%coboFillMethod->$insertItem("Distributed")
+		@%coboFillMethod->$setTooltip("Select the fill method for automatically moved media files into your media library locations.<br/><b>Sequential:</b> Files will be moved to volumes (drives) with the lowest free space first.<br/><b>Distributed</b>: Files will be moved to volumes (drives) with the most free space.<br/>Sequential should fill one drive at a time, distributed should fill all drives evenly over time.")
+		
 		# label status left
 		@%lblStatusLeft = $new(label, $$)
 		@%lblStatusLeft->$setTooltip("Status bar area. Look here for messages when operations are carried out.")
@@ -1478,6 +1517,9 @@ class("hush::libraryoptions","widget")
 			%lvi = @$fnCSVtoLVI(%libLocs[%i], @%lvMediaLoc)
 			@%lviMediaEntries[%i] = %lvi
 		}
+		
+		// populate coboFillMethod with %G_hushOptions{MediaLibraryFillMethod}
+		@%coboFillMethod->$setCurrentItem(%G_hushOptions{MediaLibraryFillMethod})
 		
 		#### do LAYOUT
 		
@@ -1496,7 +1538,9 @@ class("hush::libraryoptions","widget")
 		@%layout->$addMultiCellWidget(@%lblExistingMedia, 6,6,0,2)
 		@%layout->$addMultiCellWidget(@%lvMediaLoc, 7,7,0,2)
 		@%layout->$addMultiCellWidget(@%btnMediaRm, 8,8,0,2)
-		@%layout->$addMultiCellWidget(@%lblStatusLeft, 9,9,0,0)
+		@%layout->$addMultiCellWidget(@%lblFillMethod, 9,9,0,2)
+		@%layout->$addMultiCellWidget(@%coboFillMethod, 10,10,0,2)
+		@%layout->$addMultiCellWidget(@%lblStatusLeft, 11,11,0,0)
 		
 		### CONNECT widgets to functions
 		objects.connect @%btnIncoming clicked $$ dlgIncomingLoc
@@ -1505,7 +1549,7 @@ class("hush::libraryoptions","widget")
 		objects.connect @%btnScanMedia clicked %G_hush->%library scanLibrary
 		objects.connect @%lvMediaLoc itemActivated $$ actionMediaEntrySelected
 		objects.connect @%btnMediaRm clicked $$ actionMediaRemove
-		
+		objects.connect @%coboFillMethod activated $$ slotCoboFillMethod
 		
 		### private IMPLS
 		
@@ -1698,6 +1742,19 @@ class("hush::libraryoptions","widget")
 		}
 		
 		return %return
+	}
+	
+	function slotCoboFillMethod(function to catch signals from widget coboFillMethod)
+	{
+		# first written 20231023 by cabji
+		
+		// this function is a slot to catch signals thrown by @%coboFillMethod widget
+		
+		// set hush options value to the newly selected value
+		%G_hushOptions{MediaLibraryFillMethod} = @%coboFillMethod->$currentItem();
+		
+		
+		// dev-note: saving of this value to the config file is handled in the libraryoptions closeEvent
 	}
 	
 }
