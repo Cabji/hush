@@ -597,6 +597,85 @@ alias(xdcc::moveToLibrary)
 }
 
 
+alias(xdcc::moveToLibraryNew)
+{
+	%filename = "Some.TV.Show.2023.S01E01.1080p.HEVC.mkv"
+	// auto-detect media type of filename
+	%fileCat = %G_hush->%library->$fnDetectMediaType(%filename)
+	// get media locations for this media type
+	%arr_mediaLocations = %G_hush->%library->$fnGetMediaLocationByType(%fileCat)
+	%hash_mlDiskInfo = $null;
+	
+	// loop each arr_mediaLocations and get free space on each
+	foreach (%path, %arr_mediaLocations)
+	{
+		%hash_mlDiskInfo{%path} <+ $file.diskspace(%path);
+	}
+	
+	// decide which mediaLocation to use based on fileCat
+	// movies: check all media locations and decide based on free space and %G_hushOptions{MediaLibraryFillMethod}
+	// tv: check all media locations for TV Name/Season NN folder, otherwise make new TV Name/Season NN folder in path based on %G_hushOptions{MediaLibraryFillMethod}
+	
+	// tv show check for existing show and season folder
+	if (%fileCat == "TV Shows")
+	{
+		// get Title and Season from filename
+		# split the file name up into a show name and season number
+		%showData = $str.split("E[0-9][0-9]",%filename,r)
+		%showName = $str.lefttolast(%showData[0],.)
+		%showSeason = $str.rightfromlast(%showData[0],.)
+		# change . in show name to space (this should be an option)
+		%showName = $str.replace(%showName,.," ")
+		# change S01 to "Season 01"
+		%showSeason = $str.replace(%showSeason,S,"Season ")
+		%seasonValue = $str.rightfromlast(%showSeason," ")
+	}
+	
+	
+	// check if we have to deal with multiple locations, otherwise just use the first lcoation in the arrays
+	if (%arr_mediaLocations[]# > 1)
+	{
+		// code to decide which arr_mediaLocations index to use based only on disk free space and %G_hushOptions{MediaLibraryFillMethod}
+	}
+	else
+	{
+		// just use first value in arr_mediaLocations
+		%index = 0;
+	}
+	
+	%hash_moveCommand{Linux}		= "mv -vf"
+	%hash_moveCommand{Windows}	= "move"
+	
+	%osEnv = $system.osname()
+	
+	
+	
+	// next step:
+	
+	// auto move to library has to be handled on these bases: 
+	// 1. per OS
+	// 2. per media category
+	//	a. if movies:
+	//		i. find media location with most free disk space
+	//		ii. 
+	
+	// gather data about the media file, category and library
+	// content location first
+	// handle the OS last to minimize code duplication
+	
+	// handle movies first as they are simpler than TV shows
+	
+	
+	echo %filename
+	echo %fileCat
+	echo %arr_mediaLocations[0]
+	echo freespace: %hash_mlDiskInfo{%arr_mediaLocations[0]}[1]
+	echo Title: %showName
+	echo Season: %showSeason 
+	echo Season Value: %seasonValue
+}
+
+
 alias(xdcc::removeArchive)
 {
 	# first written 20231021 by cabji
