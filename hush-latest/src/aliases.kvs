@@ -600,21 +600,61 @@ alias(xdcc::moveToLibrary)
 alias(xdcc::moveToLibraryNew)
 {
 	%filename = "Some.TV.Show.2023.S01E01.1080p.HEVC.mkv"
+	
 	// auto-detect media type of filename
 	%fileCat = %G_hush->%library->$fnDetectMediaType(%filename)
 	// get media locations for this media type
 	%arr_mediaLocations = %G_hush->%library->$fnGetMediaLocationByType(%fileCat)
 	%hash_mlDiskInfo = $null;
+	%bestPaths = $array();
 	
 	// loop each arr_mediaLocations and get free space on each
 	foreach (%path, %arr_mediaLocations)
 	{
+		// get volume free space, check the path's volume has enough space foe the file, add it to bestPaths if it does
 		%hash_mlDiskInfo{%path} <+ $file.diskspace(%path);
+		if (%hash_mlDiskInfo{%path}[1] > $file.size(%filename))
+		%bestPaths <= %path
 	}
 	
-	// decide which mediaLocation to use based on fileCat
-	// movies: check all media locations and decide based on free space and %G_hushOptions{MediaLibraryFillMethod}
-	// tv: check all media locations for TV Name/Season NN folder, otherwise make new TV Name/Season NN folder in path based on %G_hushOptions{MediaLibraryFillMethod}
+	
+	
+	// check if we have to deal with multiple locations, otherwise just use the first lcoation in the arrays
+	if (%arr_mediaLocations[]# > 1)
+	{
+		// set the first entry at the default - this gets the first key in the hash_mlDiskInfo
+		%pathIndex = $keys(%hash_mlDiskInfo{%path})[0]
+	
+		// code to decide which arr_mediaLocations index to use based only on disk free space and %G_hushOptions{MediaLibraryFillMethod}
+		if (%G_hush->%libraryoptions->%coboFillMethod->$textAt(%G_hushOptions{MediaLibraryFillMethod}) = "Sequential")
+		{
+			// find the volume with the least free space and choose it as the one to use
+			foreach (%path, %arr_mediaLocations)
+			{
+				if (%hash_mlDiskInfo{%path} < %hash_mlDiskInfo{%useIndex})
+				{
+					%pathIndex = %path;
+				}
+			}
+		}
+		if (%G_hush->%libraryoptions->%coboFillMethod->$textAt(%G_hushOptions{MediaLibraryFillMethod}) = "Distributed")
+		{
+			// find the volume with the most free space and choose it as the one to use
+			foreach (%path, %arr_mediaLocations)
+			{
+				if (%hash_mlDiskInfo{%path} > %hash_mlDiskInfo{%useIndex})
+				{
+					%pathIndex = %path;
+				}
+			}
+	
+		}	
+	}
+	else
+	{
+		// just use first value in arr_mediaLocations
+		%pathIndex = %arr_mediaLocations[0];
+	}
 	
 	// tv show check for existing show and season folder
 	if (%fileCat == "TV Shows")
@@ -629,19 +669,13 @@ alias(xdcc::moveToLibraryNew)
 		# change S01 to "Season 01"
 		%showSeason = $str.replace(%showSeason,S,"Season ")
 		%seasonValue = $str.rightfromlast(%showSeason," ")
+	
+		// now try to locate the TV Show Title and Season anywhere in the media library locations
+		// as an existing folder for the TV Show and Season takes precedence over the Fill Method
+	
+		
 	}
 	
-	
-	// check if we have to deal with multiple locations, otherwise just use the first lcoation in the arrays
-	if (%arr_mediaLocations[]# > 1)
-	{
-		// code to decide which arr_mediaLocations index to use based only on disk free space and %G_hushOptions{MediaLibraryFillMethod}
-	}
-	else
-	{
-		// just use first value in arr_mediaLocations
-		%index = 0;
-	}
 	
 	%hash_moveCommand{Linux}		= "mv -vf"
 	%hash_moveCommand{Windows}	= "move"
