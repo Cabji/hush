@@ -599,24 +599,31 @@ alias(xdcc::moveToLibrary)
 
 alias(xdcc::moveToLibraryNew)
 {
-	// convert first argument to an array if it is a string so this alias handles arrays of filenames
-	if ($typeOf($0) == "string") {%filenames = $array($0);}
-	%filenames = $array($0)
+	// this alias will accept a string or an array as the first argument. string will be auto-converted to an array
 	
-	%filenames <+ "Rick.and.Morty.S07E01.720.HEVC.mkv"
-	%filenames <+ "American.Pie.1999.1080p.HEVC.mkv"
-	%filenames <+ "Ariana.Grande.New.Album.MP3.rar"
+	// convert first argument to an array if it is a string so this alias handles arrays of filenames
+	if ($typeOf($0) == "string") 
+	{
+		%filenames = $array($0);
+	}
+	else 
+	{
+		%filenames = $0;
+	}
 	
 	if ($typeOf(%filenames) == "array")
 	{
+		%successCount = 0;
 		%fillMethod = %G_hush->%libraryoptions->%coboFillMethod->$textAt(%G_hushOptions{MediaLibraryFillMethod})
 		%hash_moveCmd{Linux} = "mv -vf";
 		%hash_moveCmd{Windows} = "move";
+		%inDir = $file.fixpath(%G_hushOptions{"MediaIncoming"});
 		%osEnv = $system.osname();
+		%speak = $(!%G_hushOptions{"NoiseNone"})
+		if (%speak) {%G_hush->$doFCW(); rebind $window(%G_hushOptions{"FCW"});}
 	
 		// remove any empty values from array
 		%filenames = %G_hush->%common->$fnArrayRemoveEmptyValues($sort(%filenames));
-		echo %filenames;
 	
 		foreach (%filename,%filenames)
 		{
@@ -624,12 +631,10 @@ alias(xdcc::moveToLibraryNew)
 			%fileCat = %G_hush->%library->$fnDetectMediaType(%filename)
 			// get media locations for this media type
 			%arr_mediaLocations = %G_hush->%library->$fnGetMediaLocationByType(%fileCat)
-	//		%arr_mediaLocations <+ "/share2/USBDisk1"
-	//		%arr_mediaLocations <+ "/share2/WD4TB/DLNA/TV"
 	
-			echo filename: %filename\nfileCat: %fileCat\narr_mediaLocations: %arr_mediaLocations;
 			if ($typeOf(%arr_mediaLocations) == "array" && %arr_mediaLocations[]# >= 1)
 			{
+				if (%G_hush->%debug) { debug -c "\n\t $k(1,0) File: $k() $b()%filename$b()";}
 				%hash_tempDiskInfo = $null;
 				%hash_bestPathsSpace = $null;
 	
@@ -661,20 +666,17 @@ alias(xdcc::moveToLibraryNew)
 					%showSeason = $str.replace(%showSeason,S,"Season ")
 					%seasonValue = $str.rightfromlast(%showSeason," ")
 	
-					// alter filename here for TV Show episode files
-					%filename = "%showName/%showSeason/%filename";
-	
 					// make copy of bestPaths and reset bestPaths for processing
 					%processPaths = %hash_bestPaths
 					%hash_bestPaths = $null
 					// check processPaths for Tv Show/Season NN folder
 					foreach (%path, $keys(%processPaths))
 					{
-						echo checking path: "%path/%showName/%showSeason" for existence
+						if (%G_hush->%debug) {debug -c checking path: "%path/%showName/%showSeason" for existence;}
 						if ($file.exists("%path/%showName/%showSeason")) 
 						{
 							%hash_bestPaths{%path} = %processPaths{%path};
-							echo "we found this episode's season in %path";
+							if (%G_hush->%debug) {debug -c "we found this episode's season in %path";}
 						} 
 					}
 					// check processPaths for Tv Show/ folder if we found no matches above
@@ -682,11 +684,11 @@ alias(xdcc::moveToLibraryNew)
 					{
 						foreach (%path, $keys(%processPaths))
 						{
-							echo checking path: "%path/%showName" for existence
+							if (%G_hush->%debug) {debug -c checking path: "%path/%showName" for existence;}
 							if ($file.exists("%path/%showName")) 
 							{
 								%hash_bestPaths{%path} = %processPaths{%path};
-								echo "we found this episode's show name in %path";
+								if (%G_hush->%debug) {debug -c "we found this episode's show name in %path";}
 							} 
 						}
 					}
@@ -695,7 +697,7 @@ alias(xdcc::moveToLibraryNew)
 					// reset bestPaths to %processPaths if bestPaths is still $null here
 					if (%hash_bestPaths == $null) 
 					{
-						echo "we are resetting the hash_bestPaths"
+						if (%G_hush->%debug) {debug -c "we are resetting the hash_bestPaths";}
 						%hash_bestPaths = %processPaths;
 					}
 				}
@@ -720,26 +722,40 @@ alias(xdcc::moveToLibraryNew)
 	
 				// bestPath should now have the best path to use
 				// dev-note: %filename is already altered for tv show episode files above in the tv show specific code
-				%move = "%hash_moveCmd{%osEnv} $file.fixpath("%bestPath/%filename")"
+	
+				if (%fileCat == "TV Shows")
+				{
+					//file.copy -o %inDir/%filename %bestPath/%showName/%showSeason/%filename
+				}
+				else
+				{
+					//file.copy -o %inDir/%filename %bestPath/%filename
+				}
+	
+				// remove source file
+				
+				%successCount++;
 	
 				if (%fileCat == "TV Shows")
 				{
 					if (!$file.exists(%bestPath/%showName)) {file.mkdir $file.fixpath(%bestPath/%showName);}
 					if (!$file.exists(%bestPath/%showName/%showSeason)) {file.mkdir $file.fixpath(%bestPath/%showName/%showSeason);}
 				}
-				echo "best path for %filename: %bestPath";
+				if (%G_hush->%debug) {debug -c \n\t $k(1,9) Complete $k() - Best path for %filename: $b()%bestPath$b();}
 				%bestPath = $nothing;
 			}
 			else
 			{
-				echo %filename is %fileCat and there are no Media Library locations set for that category.;
+				if (%G_hush->%debug) {debug -c %filename is %fileCat and there are no Media Library locations set for that category.;}
 			}
 		}
 	}
 	else
 	{
-		if (%G_hush->%debug) {debug -c "\n\t$k(1,7) Warning $k() - first argument was not a string or array\n\t\tType of object passed in first argument was: $typeOf($0)";}
+		if (%G_hush->%debug) {debug -c "\n\t $k(1,7) Warning $k() - first argument was not a string or array\n\t\tType of object passed in first argument was: $typeOf($0)";}
 	}
+	
+	if (%speak) {echo "$k(1,9) Complete $k() - %successCount files processed successfully.";}
 }
 
 
