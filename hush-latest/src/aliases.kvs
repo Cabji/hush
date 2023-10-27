@@ -179,7 +179,7 @@ alias(xdcc::extractArchive)
 			}
 			if (%:termcode != "0") 
 			{
-				if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,4)Failed$k() - Automatic extraction of %:filename failed.\nOutput was:\n\t%:stdout";}
+				if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,4)Failed$k() - Automatic extraction of %:filename failed.";}
 				if (%G_hush->%debug) {debug -c "\n\t $k(1,4)Failed$k() - Automatic extraction of %:filename failed.\n\t\tOutput was:\n\t\t\t%:stdout";}
 			}
 		}
@@ -617,6 +617,10 @@ alias(xdcc::moveToLibraryNew)
 		%fillMethod = %G_hush->%libraryoptions->%coboFillMethod->$textAt(%G_hushOptions{MediaLibraryFillMethod})
 		%hash_moveCmd{Linux} = "mv -vf";
 		%hash_moveCmd{Windows} = "move";
+		%hash_multiCmd{Linux} = ";"	
+		%hash_multiCmd{Windows} = "&&"
+		%hash_rmCmd{Linux} = "rm -vf";
+		%hash_rmCmd{Windows} = "del /y";
 		%inDir = $file.fixpath(%G_hushOptions{"MediaIncoming"});
 		%osEnv = $system.osname();
 		%speak = $(!%G_hushOptions{"NoiseNone"})
@@ -722,17 +726,33 @@ alias(xdcc::moveToLibraryNew)
 	
 				// bestPath should now have the best path to use
 				// dev-note: %filename is already altered for tv show episode files above in the tv show specific code
+				// dev-note: 20231028 don't use file.copy to move the files because it hangs KVIrc
 	
 				if (%fileCat == "TV Shows")
 				{
 					//file.copy -o %inDir/%filename %bestPath/%showName/%showSeason/%filename
+					%cmd = "%hash_moveCmd{%osEnv} %inDir/%filename %bestPath/%showName/%showSeason/%filename %has_multiCmd{%osEnv} %hash_rmCmd{%osEnv} %inDir/%filename";
 				}
 				else
 				{
 					//file.copy -o %inDir/%filename %bestPath/%filename
+					%cmd = "%hash_moveCmd{%osEnv} %inDir/%filename %bestPath/%filename %hash_multiCmd{%osEnv} %hash_rmCmd{%osEnv} %inDir/%filename"
 				}
 	
-				// remove source file
+				exec -e -x -t -b (%cmd, %filename)
+				{
+					if ($0 == "started") {%:pid = $1;}
+					if ($0 == "stdout") {%:stdout .= $1;}
+					if ($0 == "stderr") {%:stderr .= $1;}
+					if ($0 == "terminated")
+					{
+						%speak = $(!%G_hushOptions{"NoiseNone"})
+						%:termcode = $1;
+						%:filename = $2;
+						//echo "PID: %:pid\nOutput:\n%:stdout\nErrors:\n\t%:stderr\nExit Code: %:termcode";
+					}
+					if (%G_hush->%debug) {debug -c "$k(1,9)Complete$k() - %:filename moved";}
+				}
 				
 				%successCount++;
 	
