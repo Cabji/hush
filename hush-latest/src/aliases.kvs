@@ -599,114 +599,147 @@ alias(xdcc::moveToLibrary)
 
 alias(xdcc::moveToLibraryNew)
 {
-	%filename = "Some.TV.Show.2023.S01E01.1080p.HEVC.mkv"
+	// convert first argument to an array if it is a string so this alias handles arrays of filenames
+	if ($typeOf($0) == "string") {%filenames = $array($0);}
+	%filenames = $array($0)
 	
-	// auto-detect media type of filename
-	%fileCat = %G_hush->%library->$fnDetectMediaType(%filename)
-	// get media locations for this media type
-	%arr_mediaLocations = %G_hush->%library->$fnGetMediaLocationByType(%fileCat)
-	%hash_mlDiskInfo = $null;
-	%bestPaths = $array();
+	%filenames <+ "Rick.and.Morty.S07E01.720.HEVC.mkv"
+	%filenames <+ "American.Pie.1999.1080p.HEVC.mkv"
+	%filenames <+ "Ariana.Grande.New.Album.MP3.rar"
 	
-	// loop each arr_mediaLocations and get free space on each
-	foreach (%path, %arr_mediaLocations)
+	if ($typeOf(%filenames) == "array")
 	{
-		// get volume free space, check the path's volume has enough space foe the file, add it to bestPaths if it does
-		%hash_mlDiskInfo{%path} <+ $file.diskspace(%path);
-		if (%hash_mlDiskInfo{%path}[1] > $file.size(%filename))
-		%bestPaths <= %path
-	}
+		%fillMethod = %G_hush->%libraryoptions->%coboFillMethod->$textAt(%G_hushOptions{MediaLibraryFillMethod})
+		%hash_moveCmd{Linux} = "mv -vf";
+		%hash_moveCmd{Windows} = "move";
+		%osEnv = $system.osname();
 	
+		// remove any empty values from array
+		%filenames = %G_hush->%common->$fnArrayRemoveEmptyValues($sort(%filenames));
+		echo %filenames;
 	
-	
-	// check if we have to deal with multiple locations, otherwise just use the first lcoation in the arrays
-	if (%arr_mediaLocations[]# > 1)
-	{
-		// set the first entry at the default - this gets the first key in the hash_mlDiskInfo
-		%pathIndex = $keys(%hash_mlDiskInfo{%path})[0]
-	
-		// code to decide which arr_mediaLocations index to use based only on disk free space and %G_hushOptions{MediaLibraryFillMethod}
-		if (%G_hush->%libraryoptions->%coboFillMethod->$textAt(%G_hushOptions{MediaLibraryFillMethod}) = "Sequential")
+		foreach (%filename,%filenames)
 		{
-			// find the volume with the least free space and choose it as the one to use
-			foreach (%path, %arr_mediaLocations)
+			// auto-detect media type of filename
+			%fileCat = %G_hush->%library->$fnDetectMediaType(%filename)
+			// get media locations for this media type
+			%arr_mediaLocations = %G_hush->%library->$fnGetMediaLocationByType(%fileCat)
+	//		%arr_mediaLocations <+ "/share2/USBDisk1"
+	//		%arr_mediaLocations <+ "/share2/WD4TB/DLNA/TV"
+	
+			echo filename: %filename\nfileCat: %fileCat\narr_mediaLocations: %arr_mediaLocations;
+			if ($typeOf(%arr_mediaLocations) == "array" && %arr_mediaLocations[]# >= 1)
 			{
-				if (%hash_mlDiskInfo{%path} < %hash_mlDiskInfo{%useIndex})
+				%hash_tempDiskInfo = $null;
+				%hash_bestPathsSpace = $null;
+	
+				// create arr_bestPaths and %hash_bestPathsSpace
+				foreach (%path, %arr_mediaLocations)
 				{
-					%pathIndex = %path;
+					// add it to bestPaths if there's enough disk free
+					%hash_tempDiskInfo{%path} <+ $file.diskspace(%path);
+					if (%hash_tempDiskInfo{%path}[1] > $file.size(%filename))
+					{
+						%hash_bestPaths{%path} = $str.rightfromfirst($file.diskspace(%path),",");
+					}
 				}
+				%hash_tempDiskInfo = $nothing;
+	
+				// do tv show specific processing	
+				// this code block filters out paths that dont have the tv show name in them. 
+				// if no paths have the tv show name, we will keep the default path options and create a tv show folder further down
+				if (%fileCat == "TV Shows")
+				{
+					// get tv show data segments
+					# split the file name up into a show name and season number
+					%showData = $str.split("E[0-9][0-9]",%filename,r)
+					%showName = $str.lefttolast(%showData[0],.)
+					%showSeason = $str.rightfromlast(%showData[0],.)
+					# change . in show name to space (this should be an option)
+					%showName = $str.replace(%showName,.," ")
+					# change S01 to "Season 01"
+					%showSeason = $str.replace(%showSeason,S,"Season ")
+					%seasonValue = $str.rightfromlast(%showSeason," ")
+	
+					// alter filename here for TV Show episode files
+					%filename = "%showName/%showSeason/%filename";
+	
+					// make copy of bestPaths and reset bestPaths for processing
+					%processPaths = %hash_bestPaths
+					%hash_bestPaths = $null
+					// check processPaths for Tv Show/Season NN folder
+					foreach (%path, $keys(%processPaths))
+					{
+						echo checking path: "%path/%showName/%showSeason" for existence
+						if ($file.exists("%path/%showName/%showSeason")) 
+						{
+							%hash_bestPaths{%path} = %processPaths{%path};
+							echo "we found this episode's season in %path";
+						} 
+					}
+					// check processPaths for Tv Show/ folder if we found no matches above
+					if (%hash_bestPaths == $null)
+					{
+						foreach (%path, $keys(%processPaths))
+						{
+							echo checking path: "%path/%showName" for existence
+							if ($file.exists("%path/%showName")) 
+							{
+								%hash_bestPaths{%path} = %processPaths{%path};
+								echo "we found this episode's show name in %path";
+							} 
+						}
+					}
+					// if bestPaths is still empty, it means none of the media library paths have an existing folder for this tv show
+					// so we should use the Fill Method to decide where to put this file which is the same as what we do for movies
+					// reset bestPaths to %processPaths if bestPaths is still $null here
+					if (%hash_bestPaths == $null) 
+					{
+						echo "we are resetting the hash_bestPaths"
+						%hash_bestPaths = %processPaths;
+					}
+				}
+	
+				// hash_bestPaths holds candidates for putting the file into.
+				// by default, select the first value in hash_bestPaths to use
+				%bestPath = $keys(%hash_bestPaths)[0];
+	
+				// code to decide which bestPath to use based on fillMethod
+				// find the volume with the least free space and choose it as the one to use
+				foreach (%path, $keys(%hash_bestPaths))
+				{
+					if (%fillMethod == "Sequential" && %hash_bestPaths{%path} < %hash_bestPaths{%bestPath})
+					{
+						%bestPath = %path;
+					}
+					if (%fillMethod == "Distributed" && %hash_bestPaths{%path} > %hash_bestPaths{%bestPath})
+					{
+						%bestPath = %path;
+					}
+				}
+	
+				// bestPath should now have the best path to use
+				// dev-note: %filename is already altered for tv show episode files above in the tv show specific code
+				%move = "%hash_moveCmd{%osEnv} $file.fixpath("%bestPath/%filename")"
+	
+				if (%fileCat == "TV Shows")
+				{
+					if (!$file.exists(%bestPath/%showName)) {file.mkdir $file.fixpath(%bestPath/%showName);}
+					if (!$file.exists(%bestPath/%showName/%showSeason)) {file.mkdir $file.fixpath(%bestPath/%showName/%showSeason);}
+				}
+				echo "best path for %filename: %bestPath";
+				%bestPath = $nothing;
+			}
+			else
+			{
+				echo %filename is %fileCat and there are no Media Library locations set for that category.;
 			}
 		}
-		if (%G_hush->%libraryoptions->%coboFillMethod->$textAt(%G_hushOptions{MediaLibraryFillMethod}) = "Distributed")
-		{
-			// find the volume with the most free space and choose it as the one to use
-			foreach (%path, %arr_mediaLocations)
-			{
-				if (%hash_mlDiskInfo{%path} > %hash_mlDiskInfo{%useIndex})
-				{
-					%pathIndex = %path;
-				}
-			}
-	
-		}	
 	}
 	else
 	{
-		// just use first value in arr_mediaLocations
-		%pathIndex = %arr_mediaLocations[0];
+		if (%G_hush->%debug) {debug -c "\n\t$k(1,7) Warning $k() - first argument was not a string or array\n\t\tType of object passed in first argument was: $typeOf($0)";}
 	}
-	
-	// tv show check for existing show and season folder
-	if (%fileCat == "TV Shows")
-	{
-		// get Title and Season from filename
-		# split the file name up into a show name and season number
-		%showData = $str.split("E[0-9][0-9]",%filename,r)
-		%showName = $str.lefttolast(%showData[0],.)
-		%showSeason = $str.rightfromlast(%showData[0],.)
-		# change . in show name to space (this should be an option)
-		%showName = $str.replace(%showName,.," ")
-		# change S01 to "Season 01"
-		%showSeason = $str.replace(%showSeason,S,"Season ")
-		%seasonValue = $str.rightfromlast(%showSeason," ")
-	
-		// now try to locate the TV Show Title and Season anywhere in the media library locations
-		// as an existing folder for the TV Show and Season takes precedence over the Fill Method
-	
-		
-	}
-	
-	
-	%hash_moveCommand{Linux}		= "mv -vf"
-	%hash_moveCommand{Windows}	= "move"
-	
-	%osEnv = $system.osname()
-	
-	
-	
-	// next step:
-	
-	// auto move to library has to be handled on these bases: 
-	// 1. per OS
-	// 2. per media category
-	//	a. if movies:
-	//		i. find media location with most free disk space
-	//		ii. 
-	
-	// gather data about the media file, category and library
-	// content location first
-	// handle the OS last to minimize code duplication
-	
-	// handle movies first as they are simpler than TV shows
-	
-	
-	echo %filename
-	echo %fileCat
-	echo %arr_mediaLocations[0]
-	echo freespace: %hash_mlDiskInfo{%arr_mediaLocations[0]}[1]
-	echo Title: %showName
-	echo Season: %showSeason 
-	echo Season Value: %seasonValue
 }
 
 
