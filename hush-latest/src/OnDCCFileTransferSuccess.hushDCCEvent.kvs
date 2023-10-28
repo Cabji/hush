@@ -119,7 +119,7 @@ event(OnDCCFileTransferSuccess,hushDCCEvent)
 	// logic: output transfer done msg
 		if (%G_hushOptions{"TransfersDoneMsg"})
 		{
-			if (%speak) {%G_hush->$doFCW();	rebind $window(%G_hushOptions{"FCW"}); echo %fcwMsg;}
+			if (%speak) {%G_hush->$doFCW(); rebind $window(%G_hushOptions{"FCW"}); echo %fcwMsg;}
 			if (%G_hushOptions{"ZNCPush"})
 			{
 				msg -q -r=$console(%ircContext) *push send $str.stripcolors(%fcwMsg)
@@ -128,7 +128,9 @@ event(OnDCCFileTransferSuccess,hushDCCEvent)
 	// logic: auto move file to media location
 		if (%G_hushOptions{"TransfersAutoMove"}) 
 		{
-			xdcc::moveToLibrary %thisDL[0] %thisDL[1]
+			// old code
+			//xdcc::moveToLibrary %thisDL[0] %thisDL[1]
+			xdcc::moveToLibraryNew %packName
 			%G_hush->%library->$scanLibrary()
 		}
 	

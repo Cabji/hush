@@ -2087,19 +2087,19 @@ class("hush::options","widget")
 		# automatic archive extraction on complete transfer
 		@%chbTransfersAutoExtract = $new(checkbox, @%wgtPageTransfers)
 		//@%chbTransfersAutoExtract->$setEnabled($false)
-		@%chbTransfersAutoExtract->$setText("Automatically extract archives (TAR,RAR,ZIP files)")
+		@%chbTransfersAutoExtract->$setText("Auto extract archives (TAR,RAR,ZIP files)")
 		@%chbTransfersAutoExtract->$setTooltip("Toggle on/off whether Hush should automatically extract archive files on completed download.")
 		# automatic archive extraction on complete transfer
 		@%chbTransfersAutoRemove = $new(checkbox, @%wgtPageTransfers)
-		@%chbTransfersAutoRemove->$setText("Automatically remove archives after extraction")
+		@%chbTransfersAutoRemove->$setText("Auto remove archives after extraction")
 		@%chbTransfersAutoRemove->$setTooltip("Toggle on/off whether Hush should automatically remove archive files after automatic extraction.")
 		# automatic move file to library
 		@%chbTransfersAutoMove = $new(checkbox, @%wgtPageTransfers)
-		@%chbTransfersAutoMove->$setText("Automatically move media files to Library location [only works on Windows OS at the moment]")
-		@%chbTransfersAutoMove->$setTooltip("Toggle on/off whether Hush should automatically move media files to corressponding Library location on completed download.")
+		@%chbTransfersAutoMove->$setText("Auto move completed files to appropriate Library location")
+		@%chbTransfersAutoMove->$setTooltip("Toggle on/off whether Hush should automatically move auto-downloaded media files to corressponding Library location on completed download.")
 		# automatic update kodi devices
 		@%chbTransfersAutoMCUpdate = $new(checkbox, @%wgtPageTransfers)
-		@%chbTransfersAutoMCUpdate->$setText("Automatically update Media Centre devices")
+		@%chbTransfersAutoMCUpdate->$setText("Auto update Media Centre devices")
 		@%chbTransfersAutoMCUpdate->$setTooltip("Toggle on/off if Hush should send a video library update request to your configured media devices. See Media Centre tab to configure your devices.")
 		
 		# populate child widgets of Transfers tab
@@ -3560,8 +3560,8 @@ class("hush::main","widget")
 		}
 		else
 		{
-			if (%G_hush->%debug) {debug -c "\n$k(1,0)No Files$k() - No files found to extract.\nData received was: \n\t$b()OS:$b() %osEnv\n\t$b()File Extensions:$b() %arr_exts";}		
-			if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,0)No Files$k() - No files found to extract in incoming directory.";}
+			if (%G_hush->%debug) {debug -c "\n$k(1,0) Extract Archives $k() - No archives found to extract.\nData received was: \n\t$b()OS:$b() %osEnv\n\t$b()File Extensions:$b() %arr_exts";}		
+			if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,0) Extract Archives $k() - No archives found to extract in incoming directory.";}
 		}
 		
 		
@@ -3572,10 +3572,6 @@ class("hush::main","widget")
 		
 		// send to xdcc::moveToLibrary for processing
 		xdcc::moveToLibraryNew %arr_processFiles
-		
-		
-		if (%G_hush->%debug) {debug -c "\n$k(1,3)Complete$k() - Processing files in %incomingDir complete.";}		
-		if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,3)Complete$k() - Processing files in %incomingDir complete.";}
 	}
 	
 	function doPassiveSearch($0 - boolean: if true, means the passive search was triggered automatically. false means it was triggered manually.)

@@ -168,8 +168,8 @@ alias(xdcc::extractArchive)
 			// check the termcode. 0 = success, anything else = failed
 			if ($isNumeric(%:termcode) && $int(%:termcode) == 0)
 			{
-				if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,9)Success$k() - Automatic extraction of %:filename was successful.";}
-				if (%G_hush->%debug) {debug -c "\n\t $k(1,9)Success$k() - Automatic extraction of %:filename was successful.\n\t\tStdout:%:stdout";}
+				if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "\t $k(1,9) Extract Archives $k() - Automatic extraction of %:filename was successful.";}
+				if (%G_hush->%debug) {debug -c "\n\t $k(1,9) Extract Archives $k() - Automatic extraction of %:filename was successful.\n\t\tStdout:%:stdout";}
 	
 				// after successful extraction, automatically remove the source archive if the user has the option turned on
 				if (%G_hushOptions{"TransfersAutoRemove"} == $true)
@@ -179,16 +179,16 @@ alias(xdcc::extractArchive)
 			}
 			if (%:termcode != "0") 
 			{
-				if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "$k(1,4)Failed$k() - Automatic extraction of %:filename failed.";}
-				if (%G_hush->%debug) {debug -c "\n\t $k(1,4)Failed$k() - Automatic extraction of %:filename failed.\n\t\tOutput was:\n\t\t\t%:stdout";}
+				if (%speak) {echo -w=$window(%G_hushOptions{"FCW"}) "\t $k(1,4) Extract Archives $k() - Automatic extraction of %:filename failed.";}
+				if (%G_hush->%debug) {debug -c "\n\t $k(1,4) Extract Archives $k() - Automatic extraction of %:filename failed.\n\t\tOutput was:\n\t\t\t%:stdout";}
 			}
 		}
 	}
 	else
 	{
 		// no handler for this extension type found for this OS
-		if (%G_hush->%debug) {debug -c "\n$k(1,7)Warning$k() - No program is configured to handle extracting this type of file. Data received was: \n\t$b()Filename:$b() %filename\n\t$b()Extension:$b() %ext";}
-		if (%speak) {%G_hush->$doFCW(); rebind $window(%G_hushOptions{"FCW"}); echo -w=$window(%G_hushOptions{"FCW"}) "\n$k(1,7)Warning$k() - No program is configured to handle extracting this type of file. Data received was: \n\t$b()Filename:$b() %filename\n\t$b()Extension:$b() %ext";}
+		if (%G_hush->%debug) {debug -c "\n $k(1,7) Extract Archives $k() - No program is configured to handle extracting this type of file. Data received was: \n\t$b()Filename:$b() %filename\n\t$b()Extension:$b() %ext";}
+		if (%speak) {%G_hush->$doFCW(); rebind $window(%G_hushOptions{"FCW"}); echo -w=$window(%G_hushOptions{"FCW"}) "\n$k(1,7) Extract Archives $k() - No program is configured to handle extracting this type of file. Data received was: \n\t$b()Filename:$b() %filename\n\t$b()Extension:$b() %ext";}
 	}
 }
 
@@ -725,18 +725,20 @@ alias(xdcc::moveToLibraryNew)
 				}
 	
 				// bestPath should now have the best path to use
+				if (%G_hush->%debug) {debug -c \n\t $k(1,0) Move to Library $k() - Best path : $b()%bestPath$b();}
 				// dev-note: %filename is already altered for tv show episode files above in the tv show specific code
-				// dev-note: 20231028 don't use file.copy to move the files because it hangs KVIrc
 	
+				// dev-note: 20231028 don't use file.copy to move the files because it hangs KVIrc
 				if (%fileCat == "TV Shows")
 				{
-					//file.copy -o %inDir/%filename %bestPath/%showName/%showSeason/%filename
-					%cmd = "%hash_moveCmd{%osEnv} %inDir/%filename %bestPath/%showName/%showSeason/%filename %has_multiCmd{%osEnv} %hash_rmCmd{%osEnv} %inDir/%filename";
+					// create TV show folders if they don't exist
+					if (!$file.exists(%bestPath/%showName)) {file.mkdir $file.fixpath(%bestPath/%showName);}
+					if (!$file.exists(%bestPath/%showName/%showSeason)) {file.mkdir $file.fixpath(%bestPath/%showName/%showSeason);}
+					%cmd = "%hash_moveCmd{%osEnv} \"%inDir/%filename\" \"%bestPath/%showName/%showSeason/%filename\" %hash_multiCmd{%osEnv} %hash_rmCmd{%osEnv} \"%inDir/%filename\"";
 				}
 				else
 				{
-					//file.copy -o %inDir/%filename %bestPath/%filename
-					%cmd = "%hash_moveCmd{%osEnv} %inDir/%filename %bestPath/%filename %hash_multiCmd{%osEnv} %hash_rmCmd{%osEnv} %inDir/%filename"
+					%cmd = "%hash_moveCmd{%osEnv} \"%inDir/%filename %bestPath/%filename\" %hash_multiCmd{%osEnv} %hash_rmCmd{%osEnv} \"%inDir/%filename\""
 				}
 	
 				exec -e -x -t -b (%cmd, %filename)
@@ -747,21 +749,15 @@ alias(xdcc::moveToLibraryNew)
 					if ($0 == "terminated")
 					{
 						%speak = $(!%G_hushOptions{"NoiseNone"})
+						if (%speak) {%G_hush->$doFCW(); rebind $window(%G_hushOptions{"FCW"});}
 						%:termcode = $1;
 						%:filename = $2;
+						if (%speak) {echo "\t $k(1,9) Move to Library $k() - %:filename moved";}
+						if (%G_hush->%debug) {debug -c "$k(1,9) Move to Library $k() - %:filename moved";}
 						//echo "PID: %:pid\nOutput:\n%:stdout\nErrors:\n\t%:stderr\nExit Code: %:termcode";
 					}
-					if (%G_hush->%debug) {debug -c "$k(1,9)Complete$k() - %:filename moved";}
-				}
-				
+				}			
 				%successCount++;
-	
-				if (%fileCat == "TV Shows")
-				{
-					if (!$file.exists(%bestPath/%showName)) {file.mkdir $file.fixpath(%bestPath/%showName);}
-					if (!$file.exists(%bestPath/%showName/%showSeason)) {file.mkdir $file.fixpath(%bestPath/%showName/%showSeason);}
-				}
-				if (%G_hush->%debug) {debug -c \n\t $k(1,9) Complete $k() - Best path for %filename: $b()%bestPath$b();}
 				%bestPath = $nothing;
 			}
 			else
@@ -772,10 +768,10 @@ alias(xdcc::moveToLibraryNew)
 	}
 	else
 	{
-		if (%G_hush->%debug) {debug -c "\n\t $k(1,7) Warning $k() - first argument was not a string or array\n\t\tType of object passed in first argument was: $typeOf($0)";}
+		if (%G_hush->%debug) {debug -c "\n\t $k(1,7) Move to Library $k() - first argument was not a string or array\n\t\tType of object passed in first argument was: $typeOf($0)";}
 	}
 	
-	if (%speak) {echo "$k(1,9) Complete $k() - %successCount files processed successfully.";}
+	if (%speak) {echo "$k(1,9) Move to Library $k() - %successCount of %filenames[]# files processed successfully.";}
 }
 
 
