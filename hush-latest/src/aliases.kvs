@@ -734,11 +734,11 @@ alias(xdcc::moveToLibraryNew)
 					// create TV show folders if they don't exist
 					if (!$file.exists(%bestPath/%showName)) {file.mkdir $file.fixpath(%bestPath/%showName);}
 					if (!$file.exists(%bestPath/%showName/%showSeason)) {file.mkdir $file.fixpath(%bestPath/%showName/%showSeason);}
-					%cmd = "%hash_moveCmd{%osEnv} \"%inDir/%filename\" \"%bestPath/%showName/%showSeason/%filename\" %hash_multiCmd{%osEnv} %hash_rmCmd{%osEnv} \"%inDir/%filename\"";
+					%cmd = "%hash_moveCmd{%osEnv} \"%inDir/%filename\" \"%bestPath/%showName/%showSeason/%filename\"";
 				}
 				else
 				{
-					%cmd = "%hash_moveCmd{%osEnv} \"%inDir/%filename %bestPath/%filename\" %hash_multiCmd{%osEnv} %hash_rmCmd{%osEnv} \"%inDir/%filename\""
+					%cmd = "%hash_moveCmd{%osEnv} \"%inDir/%filename %bestPath/%filename\""
 				}
 	
 				exec -e -x -t -b (%cmd, %filename)
