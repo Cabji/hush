@@ -738,9 +738,10 @@ alias(xdcc::moveToLibraryNew)
 				}
 				else
 				{
-					%cmd = "%hash_moveCmd{%osEnv} \"%inDir/%filename %bestPath/%filename\""
+					%cmd = "%hash_moveCmd{%osEnv} \"%inDir/%filename\" \"%bestPath/%filename\""
 				}
 	
+				if (%G_hush->%debug) {debug -c "$k(1,9)move cmd:$k() %cmd";}
 				exec -e -x -t -b (%cmd, %filename)
 				{
 					if ($0 == "started") {%:pid = $1;}
