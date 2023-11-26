@@ -629,141 +629,157 @@ alias(xdcc::moveToLibraryNew)
 		// remove any empty values from array
 		%filenames = %G_hush->%common->$fnArrayRemoveEmptyValues($sort(%filenames));
 	
+	debug -c files: %filenames;
+	
 		foreach (%filename,%filenames)
 		{
 			// auto-detect media type of filename
 			%fileCat = %G_hush->%library->$fnDetectMediaType(%filename)
-			// get media locations for this media type
-			%arr_mediaLocations = %G_hush->%library->$fnGetMediaLocationByType(%fileCat)
+			// get the file extension list for the media type
+			%extList = %G_hush->%libraryoptions->%libraryFileTypes{%fileCat}
 	
-			if ($typeOf(%arr_mediaLocations) == "array" && %arr_mediaLocations[]# >= 1)
+			// check that the filetype of the filename is a valid media type (to prevent archives moving into media folders)
+			// dev to-do: check file type, break or proceed on fail/success
+			%ext = $str.rightfromlast(%filename,".")
+			if ($str.contains(%extList, %ext) == $true)
 			{
-				if (%G_hush->%debug) { debug -c "\n\t $k(1,0) File: $k() $b()%filename$b()";}
-				%hash_tempDiskInfo = $null;
-				%hash_bestPathsSpace = $null;
+				// get media locations for this media type
+				%arr_mediaLocations = %G_hush->%library->$fnGetMediaLocationByType(%fileCat)
 	
-				// create arr_bestPaths and %hash_bestPathsSpace
-				foreach (%path, %arr_mediaLocations)
+				if ($typeOf(%arr_mediaLocations) == "array" && %arr_mediaLocations[]# >= 1)
 				{
-					// add it to bestPaths if there's enough disk free
-					%hash_tempDiskInfo{%path} <+ $file.diskspace(%path);
-					if (%hash_tempDiskInfo{%path}[1] > $file.size(%filename))
-					{
-						%hash_bestPaths{%path} = $str.rightfromfirst($file.diskspace(%path),",");
-					}
-				}
-				%hash_tempDiskInfo = $nothing;
+					if (%G_hush->%debug) { debug -c "\n\t $k(1,0) File: $k() $b()%filename$b()";}
+					%hash_tempDiskInfo = $null;
+					%hash_bestPathsSpace = $null;
 	
-				// do tv show specific processing	
-				// this code block filters out paths that dont have the tv show name in them. 
-				// if no paths have the tv show name, we will keep the default path options and create a tv show folder further down
-				if (%fileCat == "TV Shows")
-				{
-					// get tv show data segments
-					# split the file name up into a show name and season number
-					%showData = $str.split("E[0-9][0-9]",%filename,r)
-					%showName = $str.lefttolast(%showData[0],.)
-					%showSeason = $str.rightfromlast(%showData[0],.)
-					# change . in show name to space (this should be an option)
-					%showName = $str.replace(%showName,.," ")
-					# change S01 to "Season 01"
-					%showSeason = $str.replace(%showSeason,S,"Season ")
-					%seasonValue = $str.rightfromlast(%showSeason," ")
-	
-					// make copy of bestPaths and reset bestPaths for processing
-					%processPaths = %hash_bestPaths
-					%hash_bestPaths = $null
-					// check processPaths for Tv Show/Season NN folder
-					foreach (%path, $keys(%processPaths))
+					// create arr_bestPaths and %hash_bestPathsSpace
+					foreach (%path, %arr_mediaLocations)
 					{
-						if (%G_hush->%debug) {debug -c checking path: "%path/%showName/%showSeason" for existence;}
-						if ($file.exists("%path/%showName/%showSeason")) 
+						// add it to bestPaths if there's enough disk free
+						%hash_tempDiskInfo{%path} <+ $file.diskspace(%path);
+						if (%hash_tempDiskInfo{%path}[1] > $file.size(%filename))
 						{
-							%hash_bestPaths{%path} = %processPaths{%path};
-							if (%G_hush->%debug) {debug -c "we found this episode's season in %path";}
-						} 
-					}
-					// check processPaths for Tv Show/ folder if we found no matches above
-					if (%hash_bestPaths == $null)
-					{
-						foreach (%path, $keys(%processPaths))
-						{
-							if (%G_hush->%debug) {debug -c checking path: "%path/%showName" for existence;}
-							if ($file.exists("%path/%showName")) 
-							{
-								%hash_bestPaths{%path} = %processPaths{%path};
-								if (%G_hush->%debug) {debug -c "we found this episode's show name in %path";}
-							} 
+							%hash_bestPaths{%path} = $str.rightfromfirst($file.diskspace(%path),",");
 						}
 					}
-					// if bestPaths is still empty, it means none of the media library paths have an existing folder for this tv show
-					// so we should use the Fill Method to decide where to put this file which is the same as what we do for movies
-					// reset bestPaths to %processPaths if bestPaths is still $null here
-					if (%hash_bestPaths == $null) 
+					%hash_tempDiskInfo = $nothing;
+		
+					// do tv show specific processing	
+					// this code block filters out paths that dont have the tv show name in them. 
+					// if no paths have the tv show name, we will keep the default path options and create a tv show folder further down
+					if (%fileCat == "TV Shows")
 					{
-						if (%G_hush->%debug) {debug -c "we are resetting the hash_bestPaths";}
-						%hash_bestPaths = %processPaths;
+						// get tv show data segments
+						# split the file name up into a show name and season number
+						%showData = $str.split("E[0-9][0-9]",%filename,r)
+						%showName = $str.lefttolast(%showData[0],.)
+						%showSeason = $str.rightfromlast(%showData[0],.)
+						# change . in show name to space (this should be an option)
+						%showName = $str.replace(%showName,.," ")
+						# change S01 to "Season 01"
+						%showSeason = $str.replace(%showSeason,S,"Season ")
+						%seasonValue = $str.rightfromlast(%showSeason," ")
+	
+						// make copy of bestPaths and reset bestPaths for processing
+						%processPaths = %hash_bestPaths
+						%hash_bestPaths = $null
+						// check processPaths for Tv Show/Season NN folder
+						foreach (%path, $keys(%processPaths))
+						{
+							if (%G_hush->%debug) {debug -c checking path: "%path/%showName/%showSeason" for existence;}
+							if ($file.exists("%path/%showName/%showSeason")) 
+							{
+								%hash_bestPaths{%path} = %processPaths{%path};
+								if (%G_hush->%debug) {debug -c "we found this episode's season in %path";}
+							} 
+						}
+						// check processPaths for Tv Show/ folder if we found no matches above
+						if (%hash_bestPaths == $null)
+						{
+							foreach (%path, $keys(%processPaths))
+							{
+								if (%G_hush->%debug) {debug -c checking path: "%path/%showName" for existence;}
+								if ($file.exists("%path/%showName")) 
+								{
+									%hash_bestPaths{%path} = %processPaths{%path};
+									if (%G_hush->%debug) {debug -c "we found this episode's show name in %path";}
+								} 
+							}
+						}
+						// if bestPaths is still empty, it means none of the media library paths have an existing folder for this tv show
+						// so we should use the Fill Method to decide where to put this file which is the same as what we do for movies
+						// reset bestPaths to %processPaths if bestPaths is still $null here
+						if (%hash_bestPaths == $null) 
+						{
+							if (%G_hush->%debug) {debug -c "we are resetting the hash_bestPaths";}
+							%hash_bestPaths = %processPaths;
+						}
 					}
-				}
 	
-				// hash_bestPaths holds candidates for putting the file into.
-				// by default, select the first value in hash_bestPaths to use
-				%bestPath = $keys(%hash_bestPaths)[0];
+					// hash_bestPaths holds candidates for putting the file into.
+					// by default, select the first value in hash_bestPaths to use
+					%bestPath = $keys(%hash_bestPaths)[0];
 	
-				// code to decide which bestPath to use based on fillMethod
-				// find the volume with the least free space and choose it as the one to use
-				foreach (%path, $keys(%hash_bestPaths))
-				{
-					if (%fillMethod == "Sequential" && %hash_bestPaths{%path} < %hash_bestPaths{%bestPath})
+					// code to decide which bestPath to use based on fillMethod
+					// find the volume with the least free space and choose it as the one to use
+					foreach (%path, $keys(%hash_bestPaths))
 					{
-						%bestPath = %path;
+						if (%fillMethod == "Sequential" && %hash_bestPaths{%path} < %hash_bestPaths{%bestPath})
+						{
+							%bestPath = %path;
+						}
+						if (%fillMethod == "Distributed" && %hash_bestPaths{%path} > %hash_bestPaths{%bestPath})
+						{
+							%bestPath = %path;
+						}
 					}
-					if (%fillMethod == "Distributed" && %hash_bestPaths{%path} > %hash_bestPaths{%bestPath})
+	
+					// bestPath should now have the best path to use
+					if (%G_hush->%debug) {debug -c \n\t $k(1,0) Move to Library $k() - Best path : $b()%bestPath$b();}
+					// dev-note: %filename is already altered for tv show episode files above in the tv show specific code
+	
+					// dev-note: 20231028 don't use file.copy to move the files because it hangs KVIrc
+					if (%fileCat == "TV Shows")
 					{
-						%bestPath = %path;
+						// create TV show folders if they don't exist
+						if (!$file.exists(%bestPath/%showName)) {file.mkdir $file.fixpath(%bestPath/%showName);}
+						if (!$file.exists(%bestPath/%showName/%showSeason)) {file.mkdir $file.fixpath(%bestPath/%showName/%showSeason);}
+						%cmd = "%hash_moveCmd{%osEnv} \"%inDir/%filename\" \"%bestPath/%showName/%showSeason/%filename\"";
 					}
-				}
+					else
+					{
+						%cmd = "%hash_moveCmd{%osEnv} \"%inDir/%filename\" \"%bestPath/%filename\""
+					}
 	
-				// bestPath should now have the best path to use
-				if (%G_hush->%debug) {debug -c \n\t $k(1,0) Move to Library $k() - Best path : $b()%bestPath$b();}
-				// dev-note: %filename is already altered for tv show episode files above in the tv show specific code
-	
-				// dev-note: 20231028 don't use file.copy to move the files because it hangs KVIrc
-				if (%fileCat == "TV Shows")
-				{
-					// create TV show folders if they don't exist
-					if (!$file.exists(%bestPath/%showName)) {file.mkdir $file.fixpath(%bestPath/%showName);}
-					if (!$file.exists(%bestPath/%showName/%showSeason)) {file.mkdir $file.fixpath(%bestPath/%showName/%showSeason);}
-					%cmd = "%hash_moveCmd{%osEnv} \"%inDir/%filename\" \"%bestPath/%showName/%showSeason/%filename\"";
+					if (%G_hush->%debug) {debug -c "$k(1,9)move cmd:$k() %cmd";}
+					exec -e -x -t -b (%cmd, %filename)
+					{
+						if ($0 == "started") {%:pid = $1;}
+						if ($0 == "stdout") {%:stdout .= $1;}
+						if ($0 == "stderr") {%:stderr .= $1;}
+						if ($0 == "terminated")
+						{
+							%speak = $(!%G_hushOptions{"NoiseNone"})
+							if (%speak) {%G_hush->$doFCW(); rebind $window(%G_hushOptions{"FCW"});}
+							%:termcode = $1;
+							%:filename = $2;
+							if (%speak) {echo "\t $k(1,9) Move to Library $k() - %:filename moved";}
+							if (%G_hush->%debug) {debug -c "$k(1,9) Move to Library $k() - %:filename moved";}
+							//echo "PID: %:pid\nOutput:\n%:stdout\nErrors:\n\t%:stderr\nExit Code: %:termcode";
+						}
+					}			
+					%successCount++;
+					%bestPath = $nothing;
 				}
 				else
 				{
-					%cmd = "%hash_moveCmd{%osEnv} \"%inDir/%filename\" \"%bestPath/%filename\""
+					if (%G_hush->%debug) {debug -c %filename is %fileCat and there are no Media Library locations set for that category.;}
 				}
-	
-				if (%G_hush->%debug) {debug -c "$k(1,9)move cmd:$k() %cmd";}
-				exec -e -x -t -b (%cmd, %filename)
-				{
-					if ($0 == "started") {%:pid = $1;}
-					if ($0 == "stdout") {%:stdout .= $1;}
-					if ($0 == "stderr") {%:stderr .= $1;}
-					if ($0 == "terminated")
-					{
-						%speak = $(!%G_hushOptions{"NoiseNone"})
-						if (%speak) {%G_hush->$doFCW(); rebind $window(%G_hushOptions{"FCW"});}
-						%:termcode = $1;
-						%:filename = $2;
-						if (%speak) {echo "\t $k(1,9) Move to Library $k() - %:filename moved";}
-						if (%G_hush->%debug) {debug -c "$k(1,9) Move to Library $k() - %:filename moved";}
-						//echo "PID: %:pid\nOutput:\n%:stdout\nErrors:\n\t%:stderr\nExit Code: %:termcode";
-					}
-				}			
-				%successCount++;
-				%bestPath = $nothing;
 			}
 			else
 			{
-				if (%G_hush->%debug) {debug -c %filename is %fileCat and there are no Media Library locations set for that category.;}
+				// extension is not found for this media type
+				if (%G_hush->%debug) { debug -c "\n\t $k(1,0) File: $k() $b()%filename$b() - extension does not match filetypes to be processed for category: %fileCat.";}
 			}
 		}
 	}
