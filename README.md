@@ -1,5 +1,5 @@
 <h1>Hush ReadMe</h1>
-<h2>About</h2>h2>
+<h2>About</h2>
 <p>Hush is an addon for KVIrc and requires at least v4.9.2 or higher from v0.2.6 onwards.</p>
 <p>Hush aims to create a search system for XDCC channels along with automation for a number of aspects related to your media content. It removes the need to: publicly search for content, use subscription systems that reside on other computers and provides a degree of automation to continue content acquisition. It supports watching multiple IRC networks and channels.</p>
 
