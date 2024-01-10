@@ -13,19 +13,16 @@ hush development
 
 <h2>ToDo</h2>
 <ul>
-    <li>Media Library</li>
+    <li>Sport</li>
     <ul>
-        <li>Add support to deal with multiple media library locations with the same media category for using auto-moving of incoming media to the appropriate media library location.</li>
-        <li>Add Linux specific support to deal with moving incoming media to appropriate media library location.</li>
-    </ul>
-    <li>Transfer Management</li>
-    <ul>
-        <li>Build a system to track pending requested downloads and decide when a transfer request has had long enough and cancel it.</li>
-        <li>The request tracking needs to ensure it handles rogue bots that take ages to send files. If Hush decides to move on from a requested download, it needs to be able to ignore if a bot decides to send the file later on.</li>
+        <li>Backend: Decide how to store "Sport Trail" settings that user chooses to disk</li>
+        <li>Frontend: Build UI widgets to represent each "Sport Trail" the user creates</li>
+        <li>Backend: Decide how to build search strings to detect desired sport content</li>
+        <li>Backend: Decide how/when to perform a Sport search</li>
     </ul>
 </ul>
 <h2>bug notes</h2>
-
+<p>These bugs are pretty old now and for the most part don't seem to affect the operation of Hush, so they are very low priority.</p>
 <h3>aSTi bug</h3>
 there is a bug that producesd the following error: 
 
