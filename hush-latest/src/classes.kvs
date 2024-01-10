@@ -237,6 +237,339 @@ class("hush::tvshow","object")
 	
 }
 
+class("hush::sportobject","widget")
+{
+	function setUIConfigValues(this function sets all the UI config values in runtime memory)
+	{
+		# creates the UI config values in runtime memory
+		
+		@%sUserChoiceSportGender = ""
+		
+		@%sSportEntityTipPre  = "Set the Sport Entity to the team name you want to follow.<ul>"
+		@%sSportEntityTipPost = "</ul>You may need to alter the Sport Entity value if it doesn't match anything."
+		
+		@%aSportGender = $array("Female", "Male")
+		@%sSportGenderTooltip = "Select gender"
+		@%hSportType{"Male"} = $array("Basketball","Fighting","Football (Gridiron)","Football (Rugby)","Football (Rugby League)","Football (Soccer)","Ice Hockey","Tennis")
+		@%hSportType{"Female"} = $array("Basketball","Football (Rugby League)","Football (Soccer)","Tennis")
+		@%sSportTypeTooltip = "Select sport type"
+		@%hSportLeague{Male}{"Basketball"} = $array("NBA (USA)","NBL (AU)")
+		@%hSportLeague{Male}{"Fighting"} = $array("LUX Fight League","UFC")
+		@%hSportLeague{Male}{"Football (Gridiron)"} = $array("NFL (USA)")
+		@%hSportLeague{Male}{"Football (Rugby)"} = $array("Premiership Rugby (England)","Six Nations (UK)","Super Rugby Pacific","World Cup (Intl)")
+		@%hSportLeague{Male}{"Football (Rugby League)"} = $array("NRL (AU)", "Super League (England)")
+		@%hSportLeague{Male}{"Football (Soccer)"} = $array("A-League (AU)","EPL (England)","UEFA Champions (Europe)","UEFA Europa (Europe)")
+		@%hSportLeague{Male}{"Ice Hockey"} = $array("NHL (USA)")
+		@%hSportLeague{Male}{"Tennis"} = $array("Australian Open (AU)", "US Open (USA)")
+		@%sSportLeagueTooltip = "Select sport league"
+		
+		@%hSportEntityTip{Male}{Basketball}{"NBA (USA)"} = $array("76ers","Bucks","Bulls","Cavaliers","Celtics","Clippers","Grizzlies","Hawks","Heat","Hornets","Jazz","Kings","Knicks","Lakers","Magic","Mavericks","Nets","Nuggets","Pacers","Pelicans","Pistons","Raptors","Rockets","Spurs","Suns","Thunder","Timberwolves","Trail Blazers","Warriors","Wizards")
+		@%hSportEntityTip{Male}{Basketball}{"NBL (AU)"}  = $array("36ers", "Breakers", "Bullets", "Hawks", "JackJumpers", "Kings", "Phoenix", "Taipans", "United", "Wildcats")
+		@%hSportEntityTip{Male}{Fighting}{"LUX Fight League"} = "Set the Sport Entity to the name of the fighter you want to follow."
+		@%hSportEntityTip{Male}{Fighting}{"UFC"} = "Set the Sport Entity to the name of the fighter you want to follow."
+		@%hSportEntityTip{Male}{"Football (Gridiron)"}{"NFL (USA)"} = $array("49ers", "Bears", "Bengals", "Bills", "Broncos", "Browns", "Buccaneers", "Cardinals", "Chargers", "Chiefs", "Colts", "Cowboys", "Dolphins", "Eagles", "Falcons", "Giants", "Jaguars", "Jets", "Lions", "Packers", "Panthers", "Patriots", "Raiders", "Rams", "Ravens", "Saints", "Seahawks", "Steelers", "Texans", "Titans", "Vikings")
+		@%hSportEntityTip{Male}{"Football (Rugby)"}{"Premiership Rugby (England)"} = $array("Bath Rugby", "Bristol Bears", "Exeter Chiefs", "Gloucester Rugby", "Harlequins", "Leicester Tigers", "London Irish", "Newcastle Falcons", "Northampton Saints", "Sale Sharks", "Saracens", "Wasps", "Worcester Warriors")
+		@%hSportEntityTip{Male}{"Football (Rugby)"}{"Six Nations (UK)"} = $array("England", "France", "Ireland", "Italy", "Scotland", "Wales")
+		@%hSportEntityTip{Male}{"Football (Rugby)"}{"Super Rugby Pacific"} = $array("Blues", "Brumbies", "Chiefs", "Crusaders", "Fijian Drua", "Highlanders", "Moana Pasifika", "Rebels", "Reds", "Waratahs")
+		@%hSportEntityTip{Male}{"Football (Rugby)"}{"World Cup (Intl)"} = $array("Argentina", "Australia", "Chile", "England", "Fiji", "France", "Georgia", "Ireland", "Italy", "Japan", "Namibia", "New Zealand", "Portugal", "Romania", "Samoa", "Scotland", "South Africa", "Tonga", "Uruguay", "Wales")
+		@%hSportEntityTip{Male}{"Football (Rugby League)"}{"NRL (AU)"} = $array("Broncos", "Bulldogs", "Cowboys", "Dolphins", "Dragons", "Eels", "Knights", "Panthers", "Rabbitohs", "Raiders", "Roosters", "Sea Eagles", "Sharks", "Storm", "Titans", "Warriors", "Tigers")
+		@%hSportEntityTip{Male}{"Football (Rugby League)"}{"Super League (England)"} = $array("Castleford Tigers", "Catalans Dragons", "Huddersfield Giants", "Hull F.C.", "Hull K.R.", "Leeds Rhinos", "Leigh Leopards", "Salford Red Devils", "St Helens R.F.C.", "Wakefield Trinity", "Warrington Wolves", "Wigan Warriors")
+		@%hSportEntityTip{Male}{"Football (Soccer)"}{"A-League (AU)"} = $array("Adelaide United", "Brisbane Roar", "Central Coast Mariners", "Macarthur FC", "Melbourne City", "Melbourne Victory", "Newcastle Jets", "Perth Glory", "Sydney FC", "Wellington Phoenix", "Western Sydney Wanderers", "Western United")
+		@%hSportEntityTip{Male}{"Football (Soccer)"}{"EPL (England)"} = $array("Arsenal", "Aston Villa FC", "Brentford", "Brighton & Hove Albion", "Burnley", "Chelsea", "Crystal Palace", "Everton", "Leeds United", "Leicester City", "Liverpool", "Manchester City", "Manchester United", "Newcastle United", "Norwich City", "Southampton", "Tottenham Hotspur", "Watford", "West Ham United", "Wolverhampton Wanderers")
+		@%hSportEntityTip{Male}{"Football (Soccer)"}{"UEFA Champions (Europe)"} = $array("Ajax", "Atalanta", "Atlético Madrid", "Barcelona", "Bayern Munich", "Benfica", "Borussia Dortmund", "Chelsea", "Club Brugge", "Dynamo Kyiv", "Inter Milan", "Juventus", "Leeds United", "Liverpool", "Lokomotiv Moscow", "Manchester City", "Manchester United", "Milan", "Paris Saint-Germain", "Porto", "RB Leipzig", "Real Madrid", "Red Bull Salzburg", "Sevilla", "Shakhtar Donetsk", "Sporting CP", "SSC Napoli", "Tottenham Hotspur", "Villarreal", "Wolfsburg", "Zenit Saint Petersburg", "Zürich")
+		@%hSportEntityTip{Male}{"Football (Soccer)"}{"UEFA Europa (Europe)"} = $array("Antwerp", "Bayer Leverkusen", "Benfica", "Borussia Dortmund", "Club Brugge", "Dinamo Zagreb", "Eintracht Frankfurt", "Fenerbahçe", "Galatasaray", "Genk", "Lazio", "Leeds United", "Lille", "Lokomotiv Moscow", "Marseille", "Napoli", "Olympiacos", "PSV Eindhoven", "Real Sociedad", "Red Bull Salzburg", "Rennes", "Sevilla", "Spartak Moscow", "Villarreal")
+		@%hSportEntityTip{Male}{"Ice Hockey"}{"NHL (USA)"} = $array("Anaheim Ducks", "Arizona Coyotes", "Boston Bruins", "Buffalo Sabres", "Calgary Flames", "Carolina Hurricanes", "Chicago Blackhawks", "Colorado Avalanche", "Columbus Blue Jackets", "Dallas Stars", "Detroit Red Wings", "Edmonton Oilers", "Florida Panthers", "Los Angeles Kings", "Minnesota Wild", "Montreal Canadiens", "Nashville Predators", "New Jersey Devils", "New York Islanders", "New York Rangers", "Ottawa Senators", "Philadelphia Flyers", "Pittsburgh Penguins", "San Jose Sharks", "Seattle Kraken", "St. Louis Blues", "Tampa Bay Lightning", "Toronto Maple Leafs", "Vancouver Canucks", "Vegas Golden Knights", "Washington Capitals", "Winnipeg Jets")
+		@%hSportEntityTip{Male}{"Tennis"}{"Australian Open (AU)"} = "Set the Sport Entity to the name of the player you want to follow."
+		@%hSportEntityTip{Male}{"Tennis"}{"US Open (USA)"} = "Set the Sport Entity to the name of the player you want to follow."
+	}
+	
+	function setSearchConfigValues(sets the default search values for watching for sport content)
+	{
+		# this function defines values used to build search terms when looking for sport content
+		
+		@%hSearchGenderIndex{Male} = $array("Men","Mens","Men's","Men_s","Male")
+		@%hSearchGenderIndex{Female} = $array("Women","Womens","Women's","Women_s","Female")
+		
+		// we should not need to index the League value, just use: $str.lefttolast(%s," ") to get the league name
+	}
+	
+	function handleChoiceType(handles when user selects a Sport Type from the coboSportType widget)
+	{
+		# looks at the @%coboSportType value and acts accordingly
+		
+		// disable all sub sport widgets (SportLeague, SportEntity) because Type has changed.
+		@%coboSportLeague->$setEnabled($false)
+		@%leSportEntity->$setEnabled($false)
+		@%leSportEntity->$setTooltip("")
+		
+		// get the object that sent the signal (combobox::sportType)
+		%objSender = $$->$signalSender()
+		@%userChoiceSportType = %objSender->$textAt(%objSender->$currentItem())
+		
+		if (@%userChoiceSportType != "" && @%userChoiceSportGender != "")
+		{
+			// clear the Sport League combo box
+			@%coboSportLeague->$clear()
+			// check the Sport League UI config values are available
+			if ($typeOf(@%hSportLeague{@%userChoiceSportGender}{@%userChoiceSportType}) == "array")
+			{
+				// build the coboSportType based on the userChoice value
+				foreach (%type, @%hSportLeague{@%userChoiceSportGender}{@%userChoiceSportType})
+				{
+					@%coboSportLeague->$insertItem(%type)
+				}
+				// enable the Sport Type combobox
+				@%coboSportLeague->$setEnabled($true)
+			}
+			else
+			{
+				// there are no UI config values - notify user as this is fatal error
+				# Just a warning dialog
+				dialog.message("Program Configuration Error","A program configuration error has been detected.<br/>There is nothing you can do about this, unless you can alter source code. Otherwise contact the Hush developer via GitHub: <a href=\"https://www.gitbhub.com/Cabji/Hush\">Hush repo on GitHub</a><br/><br/>Mention this problem: Sport combobox widgets do not have UI Config values set.",warning,"OK"){ }
+			}
+		}
+		else
+		{
+		
+		}
+	}
+	
+	function handleChoiceLeague(handles user choice of Sport League in combobox widget)
+	{
+		# looks at the @%coboSportLeague value and acts accordingly
+		
+		// disable all sub sport widgets (SportEntity) because League has changed.
+		@%leSportEntity->$setEnabled($false)
+		@%leSportEntity->$setTooltip("")
+		
+		// get the object that sent the signal (combobox::sportLeague)
+		%objSender = $$->$signalSender()
+		@%userChoiceSportLeague = %objSender->$textAt(%objSender->$currentItem())
+		
+		debug -c userChoiceSportLeague: @%userChoiceSportLeague
+		
+		if (@%userChoiceSportLeague != "" @%userChoiceSportType != "" && @%userChoiceSportGender != "")
+		{
+			// todo: possibly want to clear the Sport Entity tooltip or label here?
+			// check the Sport Entity Tip UI config values are available
+			if ($typeOf(@%hSportEntityTip{@%userChoiceSportGender}{@%userChoiceSportType}{@%userChoiceSportLeague}) == "array" || $typeOf(@%hSportEntityTip{@%userChoiceSportGender}{@%userChoiceSportType}{@%userChoiceSportLeague}) == "string")
+			{
+				%sTooltip = ""
+				// build EntityTip widget from string
+				if ($typeOf(@%hSportEntityTip{@%userChoiceSportGender}{@%userChoiceSportType}{@%userChoiceSportLeague}) == "string")
+				{
+					%sTooltip = @%hSportEntityTip{@%userChoiceSportGender}{@%userChoiceSportType}{@%userChoiceSportLeague}
+				}
+				// build EntityTip widget from array
+				if ($typeOf(@%hSportEntityTip{@%userChoiceSportGender}{@%userChoiceSportType}{@%userChoiceSportLeague}) == "array")
+				{
+					%sTooltip = @%sSportEntityTipPre
+					// build the sTooltip from array
+					foreach (%entity, @%hSportEntityTip{@%userChoiceSportGender}{@%userChoiceSportType}{@%userChoiceSportLeague})
+					{
+						%sTooltip .= "<li>%entity</li>"
+					}
+					%sTooltip .= @%sSportEntityTipPost
+				}
+				@%leSportEntity->$setTooltip(%sTooltip)
+				// enable the Sport Type combobox
+				@%leSportEntity->$setEnabled($true)
+			}
+			else
+			{
+				// there are no UI config values - notify user as this is fatal error
+				# Just a warning dialog
+				dialog.message("Program Configuration Error","A program configuration error has been detected.<br/>There is nothing you can do about this, unless you can alter source code. Otherwise contact the Hush developer via GitHub: <a href=\"https://www.gitbhub.com/Cabji/Hush\">Hush repo on GitHub</a><br/><br/>Mention this problem: Sport combobox widgets do not have UI Config values set.",warning,"OK"){ }
+			}
+		}
+	}
+	
+	function handleChoiceGender(handles when the coboSportGender widget becomes activated by the user)
+	{
+		# looks at the @%coboSportGender value and acts accordingly
+		
+		debug -c we in here brah
+		// disable all sub sport widgets (SportType, SportLeague, SportEntity) because Gender has changed.
+		@%coboSportType->$setEnabled($false)
+		@%coboSportLeague->$setEnabled($false)
+		@%leSportEntity->$setEnabled($false)
+		@%leSportEntity->$setTooltip("")
+		
+		// get the object that sent the signal (combobox::sportGender)
+		%objSender = $$->$signalSender()
+		@%userChoiceSportGender = %objSender->$textAt(%objSender->$currentItem())
+		
+		if (@%userChoiceSportGender != "")
+		{
+			// clear the Sport Type combo box
+			@%coboSportType->$clear()
+			// check the Sport Type UI config values are available
+			if ($typeOf(@%hSportType{@%userChoiceSportGender}) == "array")
+			{
+				// build the coboSportType based on the userChoice value
+				foreach (%type, @%hSportType{@%userChoiceSportGender})
+				{
+					@%coboSportType->$insertItem(%type)
+				}
+				// enable the Sport Type combobox
+				@%coboSportType->$setEnabled($true)
+			}
+			else
+			{
+				// there are no UI config values - notify user as this is fatal error
+				# Just a warning dialog
+				dialog.message("Program Configuration Error","A program configuration error has been detected.<br/>There is nothing you can do about this, unless you can alter source code. Otherwise contact the Hush developer via GitHub: <a href=\"https://www.gitbhub.com/Cabji/Hush\">Hush repo on GitHub</a><br/><br/>Mention this problem: Sport combobox widgets do not have UI Config values set.",warning,"OK"){ }
+			}
+		}
+	}
+	
+	function handleChoiceEntity(handles when the user alters the value in the leSportEntity widget)
+	{
+		# handles user altering value in @%leSportEntity widget
+		
+		// disable/enable the Add button if there is text or not in leSportEntity
+		if ($0 == "")
+		{
+			@%btnSportAdd->$setEnabled($false)
+		}
+		else
+		{
+			@%btnSportAdd->$setEnabled($true)
+		}
+	}
+	
+	function constructor(sportobject constructor)
+	{
+		# sportobject consctructor
+		
+		/* this class is the sportobject for Hush. it lets us create a complex data object to define what sport 
+		   items a user wants to look for.
+		
+		sportobject class inherits from widget class, so it is used to hold the required data and display it.
+		
+		add additional info here as you build this class
+		*/
+		
+		// set UI config values - this allows the class to build the UI widgets
+		@$setUIConfigValues()
+		
+		// create UI widgets 
+		
+		# label for gender selection
+		@%lblSportGender = $new(label, $$, "sportobject::lblSportGender")
+		@%lblSportGender->$setText("Gender")
+		# combobox (dropdown) for gender selection
+		@%coboSportGender = $new(combobox, $$, "sportobject::coboSportGender")
+		@%coboSportGender->$setTooltip(@%sSportGenderTooltip)
+		@%coboSportGender->$show()
+		// generate SportGender combobox from UI config values
+		for (%i = 0; %i < @%aSportGender[]#; %i++)
+		{
+			@%coboSportGender->$insertItem(@%aSportGender[%i])
+		}
+		
+		// dev-note: initially, only the gender combobox widget is fully generated.
+		// as the user selects options from the comboboxes, the other widget's values are generated
+		// by default, the rest of the comboboxes are disabled and unpopulated.
+		
+		# label for sport type selection
+		@%lblSportType = $new(label, $$, "sportobject::lblSportType")
+		@%lblSportType->$setText("Type")
+		# combobox for sport type selection
+		@%coboSportType = $new(combobox, $$, "sportobject::coboSportType")
+		@%coboSportType->$setTooltip(@%sSportTypeTooltip)
+		@%coboSportType->$setEnabled($false)
+		
+		# label for sport league selection
+		@%lblSportLeague = $new(label, $$, "sportobject::lblSportLeague")
+		@%lblSportLeague->$setText("League")
+		# combobox for sport league selection
+		@%coboSportLeague = $new(combobox, $$, "sportobject::coboSportLeague")
+		@%coboSportLeague->$setTooltip(@%sSportLeagueTooltip)
+		@%coboSportLeague->$setEnabled($false)
+		
+		# label for sport entity tip
+		@%lblSportEntity = $new(label, $$, "sportobject::lblSportEntity")
+		@%lblSportEntity->$setText("Sport Entity (hover mouse for suggestions)")
+		# lineedit for sport entity input
+		@%leSportEntity = $new(lineedit, $$, "sportobject::leSportEntity")
+		@%leSportEntity->$setEnabled($false)
+		
+		# button for "Add" sport selection
+		@%btnSportAdd = $new(button, $$, "sportobject::btnSportAdd")
+		@%btnSportAdd->$setText("Add")
+		@%btnSportAdd->$setEnabled($false)
+		
+		// create layout
+		@%layout = $new(layout, $$, "sportobject::layout")
+		@%layout->$setSpacing(3)
+		// set column 1 to have more stretch and column 0
+		@%layout->$setColumnStretch(0,0)
+		@%layout->$setColumnStretch(1,2)
+		@%layout->$setColumnStretch(2,1)
+		// do layout
+		@%layout->$addMultiCellWidget(@%lblSportGender,		0,0,0,0)
+		@%layout->$addMultiCellWidget(@%coboSportGender,	0,0,1,2)
+		@%layout->$addMultiCellWidget(@%lblSportType,		1,1,0,0)
+		@%layout->$addMultiCellWidget(@%coboSportType,		1,1,1,2)
+		@%layout->$addMultiCellWidget(@%lblSportLeague,		2,2,0,0)
+		@%layout->$addMultiCellWidget(@%coboSportLeague,	2,2,1,2)
+		@%layout->$addMultiCellWidget(@%lblSportEntity,		3,3,0,2)
+		@%layout->$addMultiCellWidget(@%leSportEntity,		4,4,0,1)
+		@%layout->$addMultiCellWidget(@%btnSportAdd,		4,4,2,2)
+		
+		// objects connect
+		
+		objects.connect @%coboSportGender activated   $$ handleChoiceGender
+		objects.connect @%coboSportType   activated   $$ handleChoiceType
+		objects.connect @%coboSportLeague activated   $$ handleChoiceLeague
+		objects.connect @%leSportEntity   textChanged $$ handleChoiceEntity
+	}
+	
+}
+
+class("hush::sport","widget")
+{
+	function constructor(sport widget constructor)
+	{
+		# sport class for hush - builds the sport settings window
+		
+		// this value holds all the Sport config in runtime memory, they are written to disk with configSave
+		// dev-note: "config" means values that Hush uses internally to generate the Sport widgets
+		// "settings" means values that the user inputs and we save to disk.
+		// users can remove "settings" but not "configs"
+		
+		@%layout = $new(layout, $$)
+		
+		@$setGeometry(0,0,500,250)
+		@$setWindowTitle("Hush::Settings::Sport")
+		@$centerToScreen()
+		@$setFocus()
+		
+		@%layout->$setSpacing(10)
+		
+		### init child widgets for Settings::Sport
+		
+		# Label to get user started
+		@%lblHomeMsg = $new(label, $$)
+		@%lblHomeMsg->$setText("<b>Sport</b><p>Configure Hush to watch for Sport content here.</p><p>Set the Sport: Gender, Type, League and Entity to define what to watch for.</p>")
+		@%lblHomeMsg->$setTooltip("Configure Hush to look for Sport content.")
+		@%lblHomeMsg->$setAlignment(Left)
+		
+		# sportobject creation
+		@%objSportUI = $new(hush::sportobject, $$, "hush::sportUIobject")
+		
+		### do layout of widgets
+		@%layout->$addMultiCellWidget(@%lblHomeMsg, 0,0,0,1)
+		@%layout->$addMultiCellWidget(@%objSportUI, 1,1,0,1)
+		
+		@%objSportUI->$show()
+		
+		### objects connect
+	}
+	
+}
+
 class("hush::searchesimport","widget")
 {
 	function showHelp(shows help for how to use the searches import function in hush)
@@ -3086,6 +3419,16 @@ class("hush::main","widget")
 		@%pbTotalProgress->$setTotalSteps(100)
 	}
 	
+	function showSport()
+	{
+		if ($objects.exists(@%sport) == $false)
+			@%sport = $new(hush::sport)
+		#debug -c sport object's existence: $objects.exists(@%sport)
+		@%sport->$show()
+		@%sport->$raise()
+		@%sport->$setFocus()
+	}
+	
 	function showSearchesImport(displays the Searches::Import widget on the screen)
 	{
 		# dev-note: searches->import requires a searches object to exist.
@@ -3936,6 +4279,7 @@ class("hush::main","widget")
 		# hush::constructor
 		# creates widget objects and member values for the hush Main window, initializes a lot of things
 		
+		
 		if (@%debug) {debug -c info: building main widget;}
 		
 		
@@ -4043,7 +4387,10 @@ class("hush::main","widget")
 		@%btnMLibrary = $new(button, @%grpSettings)
 		@%btnMLibrary->$setText("Media Library")
 		@%btnMLibrary->$setTooltip("Click to open Media Library settings")
-		
+		# Settings -> Sport
+		@%btnSport = $new(button, @%grpSettings)
+		@%btnSport->$setText("Sport")
+		@%btnSport->$setTooltip("Click to open Sport settings")
 		
 		# group box for information
 		@%grpInfo = $new(groupbox, $$)
@@ -4161,13 +4508,23 @@ class("hush::main","widget")
 		{
 			@$parent->$parent->$showLibraryOptions()
 		}
+		
+		privateimpl(@%btnSport, mousePressEvent)
+		{
+			@$parent->$parent->$showSport()
+		}
 	}
 	
 	function configSave(saves all Hush values to the config file - $0 = file to save to, defaults to @%hushConfig $1 = section name $2 = values array)
 	{
 		# save all Hush values to the config file
 		
-		# note that this function should automatically adjust for any new option values you add in the future
+		/* note that this function should automatically adjust for any new option values 
+		   you add in the future
+		
+			Usage: 
+				configSave([string:configFile], <string:SectionName>, <array/hash:Settings => Values>)
+		*/
 		
 		# check if a filename was passed to this function, if nothing was passed here, use @%hushConfig by default
 		if ($0 == "")
