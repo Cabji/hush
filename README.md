@@ -2,17 +2,12 @@
 hush development
 
 <h2>Latest Update</h2>
-<h3>20231022</h3>
-<p>Added aliases to: 
-    <ul>
-        <li>Auto-extract archive files after auto-download</li>
-        <li>Auto-remove archive files after successful auto-extraction</li>
-    </ul>
-</p>
+
+<h3>20240110</h3>
+<p>Added new classes: hush::sport and hush::sportobject</p>
 <p>Added new widgets to: 
     <ul>
-        <li>Control toggle settings for the above</li>
-        <li>Allow manual archive processing of archives in the incoming directory (Hush -> Options -> Basic -> Process Incoming Folder Files)</li>
+        <li>Control Sport settings</li>
     </ul>
 </p>
 
