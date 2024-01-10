@@ -243,6 +243,7 @@ class("hush::sportobject","widget")
 	{
 		# creates the UI config values in runtime memory
 		
+		@%sSportTrailErrorPre = "A User Interface configuration error has been detected.<br/><br/>There is nothing you can do about this, unless you can alter the source code in:<br/><br/>Scripting -> Edit Classes -> hush -> sportobject -> setUIConfigValues<br/><br/>Otherwise contact the Hush developer via GitHub: <a href=\"https://www.github.com/Cabji/hush/issues\">https://www.github.com/Cabji/hush/issues</a><br/><br/>Mention this problem:<br/><br/>Sport combobox widgets do not have UI Config values set.<br/>Sport Value Trail was: "
 		@%sUserChoiceSportGender = ""
 		
 		@%sSportEntityTipPre  = "Set the Sport Entity to the team name you want to follow.<ul>"
@@ -323,9 +324,9 @@ class("hush::sportobject","widget")
 			}
 			else
 			{
+				%sSportTrail = "<br/>Gender: @%userChoiceSportGender<br/>Type: @%userChoiceSportType<br/><br/>Which means there's a problem with: hSportLeague{@%userChoiceSportGender}{@%userChoiceSportType}"
 				// there are no UI config values - notify user as this is fatal error
-				# Just a warning dialog
-				dialog.message("Program Configuration Error","A program configuration error has been detected.<br/>There is nothing you can do about this, unless you can alter source code. Otherwise contact the Hush developer via GitHub: <a href=\"https://www.gitbhub.com/Cabji/Hush\">Hush repo on GitHub</a><br/><br/>Mention this problem: Sport combobox widgets do not have UI Config values set.",warning,"OK"){ }
+				dialog.message("Program Configuration Error","@%sSportTrailErrorPre %sSportTrail",warning,"OK"){ }
 			}
 		}
 		else
@@ -345,8 +346,6 @@ class("hush::sportobject","widget")
 		// get the object that sent the signal (combobox::sportLeague)
 		%objSender = $$->$signalSender()
 		@%userChoiceSportLeague = %objSender->$textAt(%objSender->$currentItem())
-		
-		debug -c userChoiceSportLeague: @%userChoiceSportLeague
 		
 		if (@%userChoiceSportLeague != "" @%userChoiceSportType != "" && @%userChoiceSportGender != "")
 		{
@@ -377,9 +376,9 @@ class("hush::sportobject","widget")
 			}
 			else
 			{
+				%sSportTrail = "<br/>Gender: @%userChoiceSportGender<br/>Type: @%userChoiceSportType<br/>League: @%userChoiceSportLeague<br/><br/>Which means there's a problem with: hSportEntityTip{@%userChoiceSportGender}{@%userChoiceSportType}{@%userChoiceSportLeague}"
 				// there are no UI config values - notify user as this is fatal error
-				# Just a warning dialog
-				dialog.message("Program Configuration Error","A program configuration error has been detected.<br/>There is nothing you can do about this, unless you can alter source code. Otherwise contact the Hush developer via GitHub: <a href=\"https://www.gitbhub.com/Cabji/Hush\">Hush repo on GitHub</a><br/><br/>Mention this problem: Sport combobox widgets do not have UI Config values set.",warning,"OK"){ }
+				dialog.message("Program Configuration Error","@%sSportTrailErrorPre %sSportTrail",warning,"OK"){ }
 			}
 		}
 	}
@@ -388,7 +387,6 @@ class("hush::sportobject","widget")
 	{
 		# looks at the @%coboSportGender value and acts accordingly
 		
-		debug -c we in here brah
 		// disable all sub sport widgets (SportType, SportLeague, SportEntity) because Gender has changed.
 		@%coboSportType->$setEnabled($false)
 		@%coboSportLeague->$setEnabled($false)
@@ -416,9 +414,9 @@ class("hush::sportobject","widget")
 			}
 			else
 			{
+				%sSportTrail = "<br/>Gender: @%userChoiceSportGender<br/><br/>Which means there's a problem with: hSportType{@%userChoiceSportGender}"
 				// there are no UI config values - notify user as this is fatal error
-				# Just a warning dialog
-				dialog.message("Program Configuration Error","A program configuration error has been detected.<br/>There is nothing you can do about this, unless you can alter source code. Otherwise contact the Hush developer via GitHub: <a href=\"https://www.gitbhub.com/Cabji/Hush\">Hush repo on GitHub</a><br/><br/>Mention this problem: Sport combobox widgets do not have UI Config values set.",warning,"OK"){ }
+				dialog.message("Program Configuration Error","@%sSportTrailErrorPre %sSportTrail",warning,"OK"){ }
 			}
 		}
 	}
@@ -530,6 +528,19 @@ class("hush::sportobject","widget")
 
 class("hush::sport","widget")
 {
+	function createRequiredChildren(checks for and creates required children objects)
+	{
+		# use this function to check for existence and automated creation of required children objects for the sport class
+		
+		if ($objects.exists(@%objSportUI) == $false)
+		{
+			@%objSportUI = $new(hush::sportobject, $$, "hush::sportUIobject")
+		}
+		
+		@%layout->$addMultiCellWidget(@%objSportUI, 1,1,0,1)
+		@%objSportUI->$show()
+	}
+	
 	function constructor(sport widget constructor)
 	{
 		# sport class for hush - builds the sport settings window
@@ -538,6 +549,7 @@ class("hush::sport","widget")
 		// dev-note: "config" means values that Hush uses internally to generate the Sport widgets
 		// "settings" means values that the user inputs and we save to disk.
 		// users can remove "settings" but not "configs"
+		
 		
 		@%layout = $new(layout, $$)
 		
@@ -556,14 +568,12 @@ class("hush::sport","widget")
 		@%lblHomeMsg->$setTooltip("Configure Hush to look for Sport content.")
 		@%lblHomeMsg->$setAlignment(Left)
 		
-		# sportobject creation
-		@%objSportUI = $new(hush::sportobject, $$, "hush::sportUIobject")
+		# create required children objects (sportobject "@%objSportUI")
+		$$->$createRequiredChildren()
 		
 		### do layout of widgets
 		@%layout->$addMultiCellWidget(@%lblHomeMsg, 0,0,0,1)
 		@%layout->$addMultiCellWidget(@%objSportUI, 1,1,0,1)
-		
-		@%objSportUI->$show()
 		
 		### objects connect
 	}
@@ -3422,8 +3432,11 @@ class("hush::main","widget")
 	function showSport()
 	{
 		if ($objects.exists(@%sport) == $false)
+		{
 			@%sport = $new(hush::sport)
-		#debug -c sport object's existence: $objects.exists(@%sport)
+		}
+		
+		@%sport->$createRequiredChildren()
 		@%sport->$show()
 		@%sport->$raise()
 		@%sport->$setFocus()
