@@ -436,6 +436,35 @@ class("hush::sportobject","widget")
 		}
 	}
 	
+	function handleBtnAdd(handles when the user clicks on the Add button)
+	{
+		# handles when user clicks on the Add button
+		
+		// dev-note: realize that the Add button is only clickable if the Sport Trail is complete, 
+		// otherwise it is disabled and cannot be clicked.
+		
+		// get the object that sent the signal (btnSportAdd)
+		%objSender = $$->$signalSender()
+		%sSportEntity = @%leSportEntity->$text()
+		%i = @%aSportTrails[]#
+		
+		debug -c sportEntity: %sSportEntity
+		// put sport trail values into a hash
+		%hNewSportTrail = $hash("gender", @%userChoiceSportGender, "type", @%userChoiceSportType, "league", @%userChoiceSportLeague, "entity", %sSportEntity)
+		if ($typeOf(@%aSportTrails) != "array")
+		{
+			%i = 0
+		}
+		@%aSportTrails[%i] = %hNewSportTrail
+		
+		// remove sportEntity from leSportEntity widget and place cursor focus in leSportEntity widget (for quick addition of more entities if desired)
+		@%leSportEntity->$clear()
+		@%leSportEntity->$setFocus()
+		%objSender->$setBackgroundColor("00AA00")
+		%objSender->$setForegroundColor("000000")
+		%objSender->$startTimer(150)
+	}
+	
 	function constructor(sportobject constructor)
 	{
 		# sportobject consctructor
@@ -497,6 +526,8 @@ class("hush::sportobject","widget")
 		@%btnSportAdd = $new(button, $$, "sportobject::btnSportAdd")
 		@%btnSportAdd->$setText("Add")
 		@%btnSportAdd->$setEnabled($false)
+		@%sUIBtnAddDefaultBGColor = @%btnSportAdd->$backgroundColor()
+		@%sUIBtnAddDefaultFGColor = @%btnSportAdd->$foregroundColor()
 		
 		// create layout
 		@%layout = $new(layout, $$, "sportobject::layout")
@@ -522,6 +553,17 @@ class("hush::sportobject","widget")
 		objects.connect @%coboSportType   activated   $$ handleChoiceType
 		objects.connect @%coboSportLeague activated   $$ handleChoiceLeague
 		objects.connect @%leSportEntity   textChanged $$ handleChoiceEntity
+		objects.connect @%btnSportAdd     clicked     $$ handleBtnAdd
+		objects.connect @%btnSportAdd     timerEvent  $$ timerEventBtnAdd
+		
+		// priavte impls
+		
+		privateimpl (@%btnSportAdd, timerEvent)
+		{
+			$$->$setBackgroundColor($$->$parent()->%sUIBtnAddDefaultBGColor)
+			$$->$setForegroundColor($$->$parent()->%sUIBtnAddDefaultFGColor)
+			$$->$killTimer($0)
+		}
 	}
 	
 }
