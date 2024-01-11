@@ -1,11 +1,11 @@
-	<addon>
-		<name>Hush</name>
-		<version>0.4.1</version>
-		<title>Hush</title>
-		<description>XDCC Search System</description>
-		<minimal_version_kvirc>4.9.2</minimal_version_kvirc>
-		<date>01.04.2020</date>
-		<author>hush</author>
-		<group>Internet;</group>
-		<image>0</image>
-	</addon>
+<addon>
+	<name>Hush</name>
+	<version>0.4.2</version>
+	<title>Hush</title>
+	<description>XDCC Search System</description>
+	<minimal_version_kvirc>4.9.2</minimal_version_kvirc>
+	<date>11.01.2024</date>
+	<author>hush</author>
+	<group>Internet;</group>
+	<image>0</image>
+</addon>

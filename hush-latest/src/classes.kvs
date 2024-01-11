@@ -284,6 +284,49 @@ class("hush::sportobject","widget")
 		@%hSportEntityTip{Male}{"Tennis"}{"US Open (USA)"} = "Set the Sport Entity to the name of the player you want to follow."
 	}
 	
+	function settingsSave(saves Sport settings to disk)
+	{
+		# saves Sport settings to disk
+		
+		// create file object to save to
+		%fSportSettings = $new(file, $$, "sportobject::fSportSettings")
+		%fSportSettings->$setName(%G_hush->%hushSportConfig)
+		
+		// write the aSportTrails values to file - note: the hash keys are not written to file, values only
+		for (%i = 0; %i < @%aSportTrails[]#; %i++)
+		{
+			foreach (%val, @%aSportTrails[%i])
+			{
+				%sTrail = %val|
+			}
+			%sTrail = $str.lefttolast("|",%sTrail)
+			%fSportSettings->$writeLine("%i=%sTrail")	
+		}
+		%fSportSettings->$flush()
+		%fSportSettings->$close()
+	}
+	
+	function setSportConfigValues(sets config values for Sport backend code use)
+	{
+		# set config values for Sport backend code use
+		
+		// hLeagueRounds defines how each year week relates to a League's Rounds
+		%hLeagueRounds{"NFL (USA)"} = $hash("36","1","37","2","38","3","39","4","40","5","41","6","42","7","43","8","44","9","45","10","46","11","47","12","48","13","49","14","50","15","51","16","52","17","01","18","02","Wilcard Playoffs","03","Divisional Playoffs","04","Conference Championships","05","Probowl Games","06","Superbowl");
+		
+		/*
+		Example usage: 
+		%sWeek = $date(W);
+		if ($str.grep("%sWeek",$keys(%hLeagueRounds{"NFL (USA)"}),"r"))
+		{
+			echo %hLeagueRounds{"NFL (USA)"}{$str.grep("%sWeek",$keys(%hLeagueRounds{"NFL (USA)"}),"r")}
+		}
+		else
+		{
+			echo Outside the season
+		}
+		*/
+	}
+	
 	function setSearchConfigValues(sets the default search values for watching for sport content)
 	{
 		# this function defines values used to build search terms when looking for sport content
@@ -457,7 +500,10 @@ class("hush::sportobject","widget")
 		}
 		@%aSportTrails[%i] = %hNewSportTrail
 		
-		// remove sportEntity from leSportEntity widget and place cursor focus in leSportEntity widget (for quick addition of more entities if desired)
+		// save the sport trails to disk
+		
+		
+		// UX - remove sportEntity from leSportEntity widget and place cursor focus in leSportEntity widget (for quick addition of more entities if desired)
 		@%leSportEntity->$clear()
 		@%leSportEntity->$setFocus()
 		%objSender->$setBackgroundColor("00AA00")
@@ -4346,10 +4392,11 @@ class("hush::main","widget")
 		@%hashAutoDownload = $null
 		@%hashAutoDownloadsLog = $hash()
 		@%hashAutoSearchesLog = $hash()
-		@%hushChannelPriority = $file.localdir("config/Hush/channelPriority.conf")
-		@%hushConfig = $file.localdir("config/Hush/hush.conf")
-		@%hushDatabase = $file.localdir("config/Hush/hushdb.sqlite")
-		@%hushMediaCentres = $file.localdir("config/Hush/mediaCentres.conf")
+		@%hushChannelPriority = $file.homedir(".config/Hush/channelPriority.conf")
+		@%hushConfig = $file.homedir(".config/Hush/hush.conf")
+		@%hushDatabase = $file.homedir(".config/Hush/hushdb.sqlite")
+		@%hushMediaCentres = $file.homedir(".config/Hush/mediaCentres.conf")
+		@%hushSportConfig = $file.homedir(".config/Hush/sportSettings.conf")
 		# csv string that holds the database fieldnames -> used in Events->onChannelMessage->hushInstantDatabase event handler (and now other places)
 		@%iDBFields = "timestamp,networkName,channelName,botName,packNum,packGets,packSize,packName"
 		@%iDBMaxCounter = 0
@@ -4368,6 +4415,7 @@ class("hush::main","widget")
 		@%arrayBotsNoSSL = @$configLoad(@%hushConfig, botsNoSSL)
 		@%hashAutoSearchesLog = @$configLoad(@%hushConfig, autoSearchesLog, hash)
 		@%hashAutoDownloadsLog = @$configLoad(@%hushConfig, autoDownloadsLog, hash)
+		// dev-note: sport settings are not loaded here, they are loaded in the sportobject class
 		
 		# database stuff must come after the member property declarations
 		@$dbCreate();
