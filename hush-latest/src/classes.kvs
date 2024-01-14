@@ -254,9 +254,9 @@ class("hush::sportobject","widget")
 		@%hSportType{"Male"} = $array("Basketball","Fighting","Football (Gridiron)","Football (Rugby)","Football (Rugby League)","Football (Soccer)","Ice Hockey","Tennis")
 		@%hSportType{"Female"} = $array("Basketball","Football (Rugby League)","Football (Soccer)","Tennis")
 		@%sSportTypeTooltip = "Select sport type"
-		@%hSportLeague{Male}{"Basketball"} = $array("NBA (USA)","NBL (AU)")
+		@%hSportLeague{Male}{"Basketball"} = $array("NBA (USA)","NBA Regular Season (USA)","NBA Play-Ins (USA)","NBA Playoffs (USA)","NBA Finals (USA)","NBL (AU)")
 		@%hSportLeague{Male}{"Fighting"} = $array("LUX Fight League","UFC")
-		@%hSportLeague{Male}{"Football (Gridiron)"} = $array("NFL (USA)")
+		@%hSportLeague{Male}{"Football (Gridiron)"} = $array("NFL (USA)","NFL Finals Games (USA)")
 		@%hSportLeague{Male}{"Football (Rugby)"} = $array("Premiership Rugby (England)","Six Nations (UK)","Super Rugby Pacific","World Cup (Intl)")
 		@%hSportLeague{Male}{"Football (Rugby League)"} = $array("NRL (AU)", "Super League (England)")
 		@%hSportLeague{Male}{"Football (Soccer)"} = $array("A-League (AU)","EPL (England)","UEFA Champions (Europe)","UEFA Europa (Europe)")
@@ -265,10 +265,15 @@ class("hush::sportobject","widget")
 		@%sSportLeagueTooltip = "Select sport league"
 		
 		@%hSportEntityTip{Male}{Basketball}{"NBA (USA)"} = $array("76ers","Bucks","Bulls","Cavaliers","Celtics","Clippers","Grizzlies","Hawks","Heat","Hornets","Jazz","Kings","Knicks","Lakers","Magic","Mavericks","Nets","Nuggets","Pacers","Pelicans","Pistons","Raptors","Rockets","Spurs","Suns","Thunder","Timberwolves","Trail Blazers","Warriors","Wizards")
+		@%hSportEntityTip{Male}{Basketball}{"NBA Regular Season (USA)"} = $array("76ers","Bucks","Bulls","Cavaliers","Celtics","Clippers","Grizzlies","Hawks","Heat","Hornets","Jazz","Kings","Knicks","Lakers","Magic","Mavericks","Nets","Nuggets","Pacers","Pelicans","Pistons","Raptors","Rockets","Spurs","Suns","Thunder","Timberwolves","Trail Blazers","Warriors","Wizards")
+		@%hSportEntityTip{Male}{Basketball}{"NBA Play-Ins (USA)"} = $array("76ers","Bucks","Bulls","Cavaliers","Celtics","Clippers","Grizzlies","Hawks","Heat","Hornets","Jazz","Kings","Knicks","Lakers","Magic","Mavericks","Nets","Nuggets","Pacers","Pelicans","Pistons","Raptors","Rockets","Spurs","Suns","Thunder","Timberwolves","Trail Blazers","Warriors","Wizards")
+		@%hSportEntityTip{Male}{Basketball}{"NBA Playoffs (USA)"} = $array("76ers","Bucks","Bulls","Cavaliers","Celtics","Clippers","Grizzlies","Hawks","Heat","Hornets","Jazz","Kings","Knicks","Lakers","Magic","Mavericks","Nets","Nuggets","Pacers","Pelicans","Pistons","Raptors","Rockets","Spurs","Suns","Thunder","Timberwolves","Trail Blazers","Warriors","Wizards")
+		@%hSportEntityTip{Male}{Basketball}{"NBA Finals (USA)"} = $array("76ers","Bucks","Bulls","Cavaliers","Celtics","Clippers","Grizzlies","Hawks","Heat","Hornets","Jazz","Kings","Knicks","Lakers","Magic","Mavericks","Nets","Nuggets","Pacers","Pelicans","Pistons","Raptors","Rockets","Spurs","Suns","Thunder","Timberwolves","Trail Blazers","Warriors","Wizards")
 		@%hSportEntityTip{Male}{Basketball}{"NBL (AU)"}  = $array("36ers", "Breakers", "Bullets", "Hawks", "JackJumpers", "Kings", "Phoenix", "Taipans", "United", "Wildcats")
 		@%hSportEntityTip{Male}{Fighting}{"LUX Fight League"} = "Set the Sport Entity to the name of the fighter you want to follow."
 		@%hSportEntityTip{Male}{Fighting}{"UFC"} = "Set the Sport Entity to the name of the fighter you want to follow."
 		@%hSportEntityTip{Male}{"Football (Gridiron)"}{"NFL (USA)"} = $array("49ers", "Bears", "Bengals", "Bills", "Broncos", "Browns", "Buccaneers", "Cardinals", "Chargers", "Chiefs", "Colts", "Cowboys", "Dolphins", "Eagles", "Falcons", "Giants", "Jaguars", "Jets", "Lions", "Packers", "Panthers", "Patriots", "Raiders", "Rams", "Ravens", "Saints", "Seahawks", "Steelers", "Texans", "Titans", "Vikings")
+		@%hSportEntityTip{Male}{"Football (Gridiron)"}{"NFL Finals Games (USA)"} = "You can subscribe to the post-regular-season games regardless of which teams are playing in them.<br/><br/>This includes from the Wild Card Games to the Superbowl.<br/><br/>Enter a percent sign % in the Entity field and press the Add button to do this."
 		@%hSportEntityTip{Male}{"Football (Rugby)"}{"Premiership Rugby (England)"} = $array("Bath Rugby", "Bristol Bears", "Exeter Chiefs", "Gloucester Rugby", "Harlequins", "Leicester Tigers", "London Irish", "Newcastle Falcons", "Northampton Saints", "Sale Sharks", "Saracens", "Wasps", "Worcester Warriors")
 		@%hSportEntityTip{Male}{"Football (Rugby)"}{"Six Nations (UK)"} = $array("England", "France", "Ireland", "Italy", "Scotland", "Wales")
 		@%hSportEntityTip{Male}{"Football (Rugby)"}{"Super Rugby Pacific"} = $array("Blues", "Brumbies", "Chiefs", "Crusaders", "Fijian Drua", "Highlanders", "Moana Pasifika", "Rebels", "Reds", "Waratahs")
@@ -286,24 +291,51 @@ class("hush::sportobject","widget")
 	
 	function settingsSave(saves Sport settings to disk)
 	{
-		# saves Sport settings to disk
-		
-		// create file object to save to
-		%fSportSettings = $new(file, $$, "sportobject::fSportSettings")
-		%fSportSettings->$setName(%G_hush->%hushSportConfig)
+		# saves Sport sport settings to disk
 		
 		// write the aSportTrails values to file - note: the hash keys are not written to file, values only
 		for (%i = 0; %i < @%aSportTrails[]#; %i++)
 		{
-			foreach (%val, @%aSportTrails[%i])
+			%sTrail = ""
+			foreach (%key, $keys(@%aSportTrails[%i]))
 			{
-				%sTrail = %val|
+				%sTrail .= @%aSportTrails[%i]{%key}|
 			}
-			%sTrail = $str.lefttolast("|",%sTrail)
-			%fSportSettings->$writeLine("%i=%sTrail")	
+			%sTrail = %i=$str.lefttolast(%sTrail,"|")
+			%aToFile[] <+ %sTrail
 		}
-		%fSportSettings->$flush()
-		%fSportSettings->$close()
+		file.writeLines -c %G_hush->%hushSportConfig %aToFile
+	}
+	
+	function settingsLoad(loads Sport search settings from disk to runtime memory)
+	{
+		# load Sport search settings from disk to runtime memory
+		
+		// data acquisition
+		%sFilename = %G_hush->%hushSportConfig
+		%sFilesize = $file.size(%sFilename)
+		
+		// check filesize of file to be read just to make sure we dont hang the system
+		if (%sFilesize < 1048576 && %sFilesize != 0)
+		{
+			if (%G_hush->%debug) {debug -c Reading config...;}
+			%aConfigLines = $file.readLines(%sFilename)
+			// loop lines and split for index=gender|entity|type|league
+			foreach (%line, %aConfigLines)
+			{
+				%aPieces = $str.split("=",%line)
+				%aBits = $str.split("|",%aPieces[1])
+				@%aSportTrails[%aPieces[0]] = $hash(gender,%aBits[0],type,%aBits[2],league,%aBits[3],entity,%aBits[1])
+			}
+			if (%G_hush->%debug) {debug -c aSportTrails = @%aSportTrails;}
+		}
+		else
+		{
+			if (%G_hush->%debug)
+			{
+				debug -c %G_hush->%hushSportConfig filesize was either 0 (doesn't exist) or >= 1Mb (way too big). $k(0,7)Config not loaded$k()
+			}
+		}
 	}
 	
 	function setSportConfigValues(sets config values for Sport backend code use)
@@ -311,8 +343,14 @@ class("hush::sportobject","widget")
 		# set config values for Sport backend code use
 		
 		// hLeagueRounds defines how each year week relates to a League's Rounds
-		%hLeagueRounds{"NFL (USA)"} = $hash("36","1","37","2","38","3","39","4","40","5","41","6","42","7","43","8","44","9","45","10","46","11","47","12","48","13","49","14","50","15","51","16","52","17","01","18","02","Wilcard Playoffs","03","Divisional Playoffs","04","Conference Championships","05","Probowl Games","06","Superbowl");
-		
+		// hash{key} = value; where key is the year week number and value is what round that year week is in the League
+		@%hLeagueRounds{"NFL (USA)"} = $hash(36,1,37,2,38,3,39,4,40,5,41,6,42,7,43,8,44,9,45,10,46,11,47,12,48,13,49,14,50,15,51,16,52,17,01,18,02,"Wild Card Games",03,"Divisional Playoffs",04,"Conference Championships",05,"Probowl Games",06,"Superbowl")
+		@%hLeagueRounds{"NRL (AU)"}  = $hash(10,1,11,2,12,3,13,4,14,5,15,6,16,7,17,8,18,9,19,10,20,11,21,12,22,13,23,14,24,15,25,16,26,17,27,18,28,19,29,20,30,21,31,22,32,23,33,24,34,25,35,26,36,27,37,"Qualifying Finals",38,"Quarter Finals",39,"Semi Finals",40,"Grand Final");
+		@%hLeagueRounds{"NBA (USA)"} = $hash(43,1,44,2,45,3,46,4,47,5,48,6,49,7,50,8,51,9,52,10,1,11,2,12,3,13,4,14,5,15,6,16,7,17,8,18,9,19,10,20,11,21,12,22,13,23,14,24,15,25,16,"Play-Ins",17,"Playoffs",18,"Playoffs",19,"Conference Semi Finals",20,"Conference Semi Finals",21,"Conference Finals",23,"Finals",24,"Finals",25,"Finals");
+		@%hLeagueRounds{"NBA Regular Season (USA)"} = $hash(43,1,44,2,45,3,46,4,47,5,48,6,49,7,50,8,51,9,52,10,1,11,2,12,3,13,4,14,5,15,6,16,7,17,8,18,9,19,10,20,11,21,12,22,13,23,14,24,15,25);
+		@%hLeagueRounds{"NBA Play-Ins (USA)"} = $hash(16,"Play-Ins");
+		@%hLeagueRounds{"NBA Playoffs (USA)"} = $hash(17,"Playoffs",18,"Playoffs");
+		@%hLeagueRounds{"NBA Finals (USA)"} = $hash(19,"Conference Semi Finals",20,"Conference Semi Finals",21,"Conference Finals",22,"Finals",23,"Finals",24,"Finals",25,"Finals");
 		/*
 		Example usage: 
 		%sWeek = $date(W);
@@ -331,9 +369,27 @@ class("hush::sportobject","widget")
 	{
 		# this function defines values used to build search terms when looking for sport content
 		
+		/* dev-note: in sport, post-regular-season weeks or round swill usually have a special 
+		   name. Examples are:
+			NFL -> Wild Card Games (1st week where playing teams get eliminated from the competition for the year)
+			NFL -> Divisional Play Offs (elimination round kind of like quarter finals)
+			NBA -> Play-Ins (similar to Wild Card Games in NFL)
+			NRL -> Qualifying Final (victors fast track to Preliminary Finals)
+			NRL -> Elimination Final (losers are eliminated)
+			NRL -> Preliminary Final (semi final)
+			etc.
+		
+		   This function lets you define alternate search strings for any token that may be used 
+		   to label filenames for special sport weeks or rounds.
+		*/
 		@%hSearchGenderIndex{Male} = $array("Men","Mens","Men's","Men_s","Male")
 		@%hSearchGenderIndex{Female} = $array("Women","Womens","Women's","Women_s","Female")
 		
+		@%hSearchRoundIndex{"Grand Final"} = $array("GF")
+		@%hSearchRoundIndex{"Wild Card Games"} = $array("wild card", "wildcard")
+		@%hSearchRoundIndex{"Divisional Playoffs"} = $array("divisional play offs", "divisional play off", "divisional playoff", "divisional game", "divisionals", "divisional")
+		@%hSearchRoundIndex{"Conference Championships"} = $array("conference championship", "conference", "championship")
+		@%hSearchRoundIndex{"Superbowl"} = $array("super bowl", "pro bowl", "probowl")
 		// we should not need to index the League value, just use: $str.lefttolast(%s," ") to get the league name
 	}
 	
@@ -501,7 +557,7 @@ class("hush::sportobject","widget")
 		@%aSportTrails[%i] = %hNewSportTrail
 		
 		// save the sport trails to disk
-		
+		@$settingsSave()
 		
 		// UX - remove sportEntity from leSportEntity widget and place cursor focus in leSportEntity widget (for quick addition of more entities if desired)
 		@%leSportEntity->$clear()
@@ -525,6 +581,7 @@ class("hush::sportobject","widget")
 		
 		// set UI config values - this allows the class to build the UI widgets
 		@$setUIConfigValues()
+		@$settingsLoad()
 		
 		// create UI widgets 
 		
