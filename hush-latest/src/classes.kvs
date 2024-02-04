@@ -344,7 +344,7 @@ class("hush::sportobject","widget")
 		
 		// hLeagueRounds defines how each year week relates to a League's Rounds
 		// hash{key} = value; where key is the year week number and value is what round that year week is in the League
-		@%hLeagueRounds{"NFL (USA)"} = $hash(36,1,37,2,38,3,39,4,40,5,41,6,42,7,43,8,44,9,45,10,46,11,47,12,48,13,49,14,50,15,51,16,52,17,01,18,02,"Wild Card Games",03,"Divisional Playoffs",04,"Conference Championships",05,"Probowl Games",06,"Superbowl")
+		@%hLeagueRounds{"NFL (USA)"} = $hash(36,1,37,2,38,3,39,4,40,5,41,6,42,7,43,8,44,9,45,10,46,11,47,12,48,13,49,14,50,15,51,16,52,17,01,18,02,"Wild Card Games",03,"Divisional Playoffs",04,"Conference Championship",05,"Probowl Games",06,"Superbowl")
 		@%hLeagueRounds{"NRL (AU)"}  = $hash(10,1,11,2,12,3,13,4,14,5,15,6,16,7,17,8,18,9,19,10,20,11,21,12,22,13,23,14,24,15,25,16,26,17,27,18,28,19,29,20,30,21,31,22,32,23,33,24,34,25,35,26,36,27,37,"Qualifying Finals",38,"Quarter Finals",39,"Semi Finals",40,"Grand Final");
 		@%hLeagueRounds{"NBA (USA)"} = $hash(43,1,44,2,45,3,46,4,47,5,48,6,49,7,50,8,51,9,52,10,1,11,2,12,3,13,4,14,5,15,6,16,7,17,8,18,9,19,10,20,11,21,12,22,13,23,14,24,15,25,16,"Play-Ins",17,"Playoffs",18,"Playoffs",19,"Conference Semi Finals",20,"Conference Semi Finals",21,"Conference Finals",23,"Finals",24,"Finals",25,"Finals");
 		@%hLeagueRounds{"NBA Regular Season (USA)"} = $hash(43,1,44,2,45,3,46,4,47,5,48,6,49,7,50,8,51,9,52,10,1,11,2,12,3,13,4,14,5,15,6,16,7,17,8,18,9,19,10,20,11,21,12,22,13,23,14,24,15,25);
@@ -388,9 +388,26 @@ class("hush::sportobject","widget")
 		@%hSearchRoundIndex{"Grand Final"} = $array("GF")
 		@%hSearchRoundIndex{"Wild Card Games"} = $array("wild card", "wildcard")
 		@%hSearchRoundIndex{"Divisional Playoffs"} = $array("divisional play offs", "divisional play off", "divisional playoff", "divisional game", "divisionals", "divisional")
-		@%hSearchRoundIndex{"Conference Championships"} = $array("conference championship", "conference", "championship")
-		@%hSearchRoundIndex{"Superbowl"} = $array("super bowl", "pro bowl", "probowl")
+		@%hSearchRoundIndex{"Conference Championship"} = $array("divisional championship", "divisional final", "conference", "championship")
+		@%hSearchRoundIndex{"Superbowl"} = $array("super bowl")
 		// we should not need to index the League value, just use: $str.lefttolast(%s," ") to get the league name
+	}
+	
+	function populateSportTrailsWidget(populates/refreshes the sport trail listbox widget)
+	{
+		# populates the sport trail listbox widget
+		
+		debug -c we are in here.
+		// reset the lbSportTrails widget entries
+		@%lbSportTrails->$clear()
+		
+		for (%i = 0; %i < @%aSportTrails[]#; %i++)
+		{
+		
+			%sSportTrail = @%aSportTrails[%i]{gender}" → "@%aSportTrails[%i]{type}" → "@%aSportTrails[%i]{league}" → "@%aSportTrails[%i]{entity}
+			@%lbSportTrails->$insertItem(%sSportTrail,%i)
+			%sSportTrail = "";
+		}
 	}
 	
 	function handleChoiceType(handles when user selects a Sport Type from the coboSportType widget)
@@ -535,6 +552,28 @@ class("hush::sportobject","widget")
 		}
 	}
 	
+	function handleBtnRm(handles user clicking sport trail Remove button)
+	{
+		# handles when user clicks on sport trail Remove button
+		
+		// dev-note: the Remove button is only clickable when a sport trail item is selected in the sporttrail listbox widget
+		
+		// get index of select item in lbSportTrails
+		%iUID = @%lbSportTrails->$currentItem
+		
+		if (%iUID > -1) 
+		{
+			@%lbSportTrails->$removeItem(%iUID);
+			@%aSportTrails[%iUID] = ""
+			@%aSportTrails = %G_hush->%common->$fnArrayRemoveEmptyValues(@%aSportTrails)
+			// set the current listbox item to count+1 so nothing is selected
+			@%lbSportTrails->$setCurrentItem($(@%lbSportTrails->$count() + 1))
+			@$settingsSave()
+		}
+		// else no item is selected in the sport trail list box and the Remove button should be inactive
+		@%btnSportRm->$setEnabled($false)
+	}
+	
 	function handleBtnAdd(handles when the user clicks on the Add button)
 	{
 		# handles when user clicks on the Add button
@@ -558,6 +597,9 @@ class("hush::sportobject","widget")
 		
 		// save the sport trails to disk
 		@$settingsSave()
+		
+		// repopulate the lbSportTrails widget
+		@$populateSportTrailsWidget()
 		
 		// UX - remove sportEntity from leSportEntity widget and place cursor focus in leSportEntity widget (for quick addition of more entities if desired)
 		@%leSportEntity->$clear()
@@ -632,6 +674,17 @@ class("hush::sportobject","widget")
 		@%sUIBtnAddDefaultBGColor = @%btnSportAdd->$backgroundColor()
 		@%sUIBtnAddDefaultFGColor = @%btnSportAdd->$foregroundColor()
 		
+		# listbox for Existing Sport Trails
+		@%lbSportTrails = $new(listbox, $$, "sportobject::lbSportTrails")
+		
+		# button to remove Existing Sport Trails
+		@%btnSportRm = $new(button, $$, "sportobject::btnRmSportTrail")
+		@%btnSportRm->$setText("Remove")
+		@%btnSportRm->$setEnabled($false)
+		
+		# populate widgets as required
+		$$->$populateSportTrailsWidget()
+		
 		// create layout
 		@%layout = $new(layout, $$, "sportobject::layout")
 		@%layout->$setSpacing(3)
@@ -649,23 +702,35 @@ class("hush::sportobject","widget")
 		@%layout->$addMultiCellWidget(@%lblSportEntity,		3,3,0,2)
 		@%layout->$addMultiCellWidget(@%leSportEntity,		4,4,0,1)
 		@%layout->$addMultiCellWidget(@%btnSportAdd,		4,4,2,2)
+		@%layout->$addMultiCellWidget(@%lbSportTrails,		5,5,0,2)
+		@%layout->$addMultiCellWidget(@%btnSportRm,		6,6,0,2)
 		
 		// objects connect
 		
-		objects.connect @%coboSportGender activated   $$ handleChoiceGender
-		objects.connect @%coboSportType   activated   $$ handleChoiceType
-		objects.connect @%coboSportLeague activated   $$ handleChoiceLeague
-		objects.connect @%leSportEntity   textChanged $$ handleChoiceEntity
-		objects.connect @%btnSportAdd     clicked     $$ handleBtnAdd
-		objects.connect @%btnSportAdd     timerEvent  $$ timerEventBtnAdd
+		objects.connect @%coboSportGender activated   		$$ handleChoiceGender
+		objects.connect @%coboSportType   activated   		$$ handleChoiceType
+		objects.connect @%coboSportLeague activated   		$$ handleChoiceLeague
+		objects.connect @%leSportEntity   textChanged 		$$ handleChoiceEntity
+		objects.connect @%btnSportAdd     clicked     		$$ handleBtnAdd
+		// @%btnSportAdd timerEvent handling is done in privateimpl section
+		// @%lbSportTrails selectionChanged handling is done in privateimpl section
+		objects.connect @%btnSportRm	  clicked			$$ handleBtnRm
+		
 		
 		// priavte impls
+		// for reasons unknown, some signals cannot be handled using functions with objects.connect
+		// so we have to use privateimpl to handle those events. they are listed below
 		
 		privateimpl (@%btnSportAdd, timerEvent)
 		{
 			$$->$setBackgroundColor($$->$parent()->%sUIBtnAddDefaultBGColor)
 			$$->$setForegroundColor($$->$parent()->%sUIBtnAddDefaultFGColor)
 			$$->$killTimer($0)
+		}
+		
+		privateimpl (@%lbSportTrails, selectionChangedEvent)
+		{
+			$$->$parent->%btnSportRm->$setEnabled($true)
 		}
 	}
 	
@@ -683,6 +748,7 @@ class("hush::sport","widget")
 		}
 		
 		@%layout->$addMultiCellWidget(@%objSportUI, 1,1,0,1)
+		@%objSportUI->$populateSportTrailsWidget()
 		@%objSportUI->$show()
 	}
 	
