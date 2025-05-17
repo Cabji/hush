@@ -5,49 +5,64 @@
 #register the script : this must be the first instruction executed
 #since it will abort with an error when a greater version is already installed
 
-addon.register("Hush", "0.4.2", $tr("Hush", Hush), $tr("XDCC Search System", Hush), "4.9.2", Hush / hush.png){
+addon.register("Hush", "0.4.2", $tr("Hush", Hush), $tr("XDCC Search System", Hush), "4.9.2", Hush/hush.png)
+{
 #This is our uninstall callback : it will be called by KVIrc when addon.uninstall is invoked
 #This is an automatically generated alias that will erase the installed files
 
-	Hush::uninstallfiles}
+	Hush::uninstallfiles
+}
 
 #Ok, addon.register succeeded.We can go on with the installation.
 
 #Get the path that this script was launched from
-	% mypath = $file.extractPath($0)
+	%mypath = $file.extractPath($0)
 
 #get the installer helper class(this is pretty standard and included in the distro)
-				   parse
-			   % mypath / utils / installer.kvs
+parse %mypath/utils/installer.kvs
 
 #The installer will copy our files and generate automatically
 #an uninstallation alias for them
-			   % installer = $new(installer, 0, myinstaller)
+%installer = $new(installer, 0, myinstaller)
 
 #Copy files in each subdirectory
 #the configs
-								 if (!$file.exists($file.homedir(".config/Hush"))){
-									 file.mkdir $file.homedir(".config/Hush")} %
-							 installer->$copyFiles("%mypath/.config", "*.*", "$file.homedir(".config / Hush ")")
+if (!$file.exists($file.homedir(".config/Hush")))
+{
+	file.mkdir $file.homedir(".config/Hush")
+} 
+	%installer->$copyFiles("%mypath/.config", "*.*", "$file.homedir(".config/Hush")")
 
 #the helps
-								 if (!$file.exists($file.localdir("help/Hush/en"))){file.mkdir $file.localdir("help/Hush/en")} %
-							 installer->$copyFiles("%mypath/help/en", "*.*", "$file.localdir(" help / Hush / en ")") if (!$file.exists($file.localdir("help/Hush/en/images"))){file.mkdir $file.localdir("help/Hush/en/images")} % installer->$copyFiles("%mypath/help/en/images", "*.*", "$file.localdir(" help / Hush / en / images ")")
+if (!$file.exists($file.localdir("help/Hush/en"))) 
+{
+	file.mkdir $file.localdir("help/Hush/en")
+} 
+
+%installer->$copyFiles("%mypath/help/en", "*.*", "$file.localdir("help/Hush/en")") 
+if (!$file.exists($file.localdir("help/Hush/en/images")))
+{
+	file.mkdir $file.localdir("help/Hush/en/images")
+} 
+
+%installer->$copyFiles("%mypath/help/en/images", "*.*", "$file.localdir("help/Hush/en/images")")
 
 #the pics
-																																																									   if (!$file.exists($file.localdir("pics/Hush"))){file.mkdir $file.localdir("pics/Hush")} %
-							 installer->$copyFiles("%mypath/pics/", "*.png", "$file.localdir(" pics / Hush ")")
+if (!$file.exists($file.localdir("pics/Hush")))
+{
+	file.mkdir $file.localdir("pics/Hush")
+} 
+%installer->$copyFiles("%mypath/pics/", "*.png", "$file.localdir("pics/Hush")")
 
 #parse source files
-							 % installer->$includeFiles("%mypath/src/", "*.kvs")
+%installer->$includeFiles("%mypath/src/", "*.kvs")
 
 #then generate the uninstall alias
-							 % installer->$generateUninstallAlias("Hush::uninstallfiles")
+%installer->$generateUninstallAlias("Hush::uninstallfiles")
 
-							 % installer->$includeFiles("%mypath/", "init.kvs")
+%installer->$includeFiles("%mypath/", "init.kvs")
 
 #finally kill the installer helper
-								   delete %
-							 installer
+delete %installer
 
 #Done : the addon is installed and running : enjoy :)
