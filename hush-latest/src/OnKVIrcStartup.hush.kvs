@@ -16,7 +16,7 @@ event(OnKVIrcStartup,hush)
 	%G_hush->%searches 			= $new(hush::searches, 		0,				"Hush Searches Widget")
 	%G_hush->%searchesImport 		= $new(hush::searchesimport, 	0, 				"Hush Searches Import Widget")
 	%G_hush->%sport				= $new(hush::sport,			0, 				"Hush Sport Widget")
-	%G_hush->%sport->objSportUI	= $new(hush::sportobject,		%G_hush->%sport,	"Hush SportObject")
+	%G_hush->%sport->%objSportUI	= $new(hush::sportobject,		%G_hush->%sport,	"Hush SportObject")
 	
 	%G_hush->%library->$scanLibrary()
 	%G_hush->$buildPSQuery()
