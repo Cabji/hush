@@ -1,30 +1,46 @@
-<h1>Hush ReadMe</h1>
-<h2>About</h2>
-<p>Hush is an addon for KVIrc and requires at least v4.9.2 or higher from v0.2.6 onwards.</p>
-<p>Hush aims to create a search system for XDCC channels along with automation for a number of aspects related to your media content. It removes the need to: publicly search for content, use subscription systems that reside on other computers and provides a degree of automation to continue content acquisition. It supports watching multiple IRC networks and channels.</p>
+# Hush ReadMe
+## About
+Hush is an addon for KVIrc and requires at least v4.9.2 or higher from v0.2.6 onwards.
+Hush aims to create a local search system for XDCC channels along with automation for a number of aspects related to your media content. 
+It: 
+ * removes the need to publicly search for content
+ * removes the need to use subscription systems that reside on other computers
+ * provides a degree of automation to continue content acquisition
+ * supports watching multiple IRC networks and channels
 
-<h2>Latest Update</h2>
+## Latest Update
 
-<h3>20240110</h3>
-<p>Added new classes: hush::sport and hush::sportobject</p>
-<p>Added new widgets to: 
-    <ul>
-        <li>Control Sport settings</li>
-    </ul>
-</p>
+### 20250124
+Bug hunting - my install was not updating the permanent record array. Things I found were: 
 
-<h2>ToDo</h2>
-<ul>
-    <li>Sport</li>
-    <ul>
-        <li>Frontend: Build UI widgets to represent each "Sport Trail" the user creates</li>
-        <li>Backend: Decide how to build search strings to detect desired sport content</li>
-        <li>Backend: Decide how/when to perform a Sport search</li>
-    </ul>
-</ul>
-<h2>bug notes</h2>
-<p>These bugs are pretty old now and for the most part don't seem to affect the operation of Hush, so they are very low priority.</p>
-<h3>aSTi bug</h3>
+	* There was no Hush folder in the Users\username\AppData\Roaming\KVIrc4\config location (running on Windows)
+	* The file.mkdir command is used to create this folder in the install.kvs file, so either this file was not ran, or there is a permission problem preventing the install.kvs from creating that folder.
+	* If the config/Hush folder is created manually, then hush/kvirc is able to write to the folder, even if kvirc is ran without admin permissions
+
+I am continuing to see why the permanent record array doesn't save and update.
+I updated the Hush code to save its config files in the file.homedir locations (the user's home directory) instead of the file.localdir location (the AppData\Roaming\KVIrc4 folder) and it seems to have fixed the permanent record generation.
+
+
+### 20240110
+Added new classes: hush::sport and hush::sportobject
+Added new widgets to: 
+    
+        * Control Sport settings
+    
+
+
+## ToDo
+
+    * Sport
+    
+        * Frontend: Build UI widgets to represent each "Sport Trail" the user creates
+        * Backend: Decide how to build search strings to detect desired sport content
+        * Backend: Decide how/when to perform a Sport search
+    
+
+## bug notes
+These bugs are pretty old now and for the most part don't seem to affect the operation of Hush, so they are very low priority.
+### aSTi bug
 there is a bug that producesd the following error:
 
 [Nov08-23:07:12] [KVS] Runtime error: Array index didn't evaluate to an integer
@@ -44,7 +60,7 @@ I am not sure if the multi-download bug relates to the aSTi bug?
 
 ---
 
-<h3>The Multi Download Bug</h3>
+### The Multi Download Bug
 
 Debug log showed that:
 
@@ -69,7 +85,7 @@ Debug log showed that:
 12. aSTi is returned value of hush::common::fnArrayBinarySearch
 13. appears as though in this instance only, the error generated was dues to the $k()[FATAL ERROR]$k() <- square brackets were mistaken for an array index reference. This was not truly the aSTi bug.
 
-<h3>Media Libary Scan Bug</h3>
+### Media Libary Scan Bug
 On KVIrc startup, the media library scan function will run. It will successfully scan the configured media content locations and find Movies and TV titles, placing their values into the appropriate arrays and files.
 
 If you open the Media Library window after startup and click the "Scan Media Library" button, the media scan will run, but it will find 0 or 1 title only.
