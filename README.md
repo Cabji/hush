@@ -10,6 +10,12 @@ It:
 
 ## Latest Update
 
+### 20260428
+Auto Searches Import Workaround
+IMDB was 'blocking' me from accessing their Calendar page, but only when I accessed it using KVIrc. I believe they are blocking based on the HTTP User Agent since KVIrc identifies as KVIrc and not a normal web browser. As my script was only accessing the page once per day I guess they picked up it was a bot from the User Agent or the precise timing of the request each day.
+
+To change the User Agent string I would have to build KVIrc from source and then you have to use a custom version of KVIrc for this feature to work, so instead I added a Local File option in the Searches Import for IMDB Calendar page. This means the automatic acquisition of Movies will no longer work, but you can periodically fetch and save the IMDB Calendar page to your local drive using your browser and point Hush at it via this new option in Searches Import and it will grab the Movie names for you and import them to Searches.
+
 ### 20250124
 Bug hunting - my install was not updating the permanent record array. Things I found were: 
 

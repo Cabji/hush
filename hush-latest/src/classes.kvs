@@ -820,11 +820,61 @@ class("hush::searchesimport","widget")
 		if ($typeOf($1) == string) {%urlType = $1;} else {%urlType = @%coboImportURL->$current();}
 		
 		%incoming = %G_hushOptions{"MediaIncoming"}
+		%success = false
 		
 		if (%url)
 		{
+			// create a list object that will hold the titles we find
+			%G_hushSearchesImport = $new(list)
+		
+			# check if the url passed is NOT a http or https url - assume it is a local path
+			if (!$str.match("https{0,1}://.*",%url,r))
+			{
+				debug -c the URL is not http or https, so we would assume this is a local file request?
+				# check file exists
+				if ($file.exists(%url))
+				{
+					debug -c urlType = %urlType
+					%f = $file.read(%url)
+					if (%f)
+					{
+						debug -c read file successfully
+						if (%urlType == "Local File - IMDB Calendar")
+						{
+							// strip front of HTML page away
+							%f = $str.rightfromfirst(%f,"<section class=\"ipc-page-section ipc-page-section--base\">");
+		#debug -c "size of file: $length(%f)";
+							// strip back of HTML page away
+							%f = $str.lefttofirst(%f,"<button class=\"ipc-scroll-to-top-button")
+		#debug -c "size of file: $length(%f)";
+			
+							// split interesting HTML into array, each element contains a movie title
+							%f = $str.split("<div class=\"ipc-metadata-list-summary-item__tc\">",%f)
+							// loop the array strip/replacing values to get array of movie titles
+							foreach (%val, %f)
+							{
+								%temp = $str.rightfromlast($str.lefttofirst(%val,"</a>"),">")
+								%temp = $str.replace(%temp,"(","")
+								%temp = $str.replace(%temp,")","")
+								%temp = $str.replace(%temp,"&#x27;","'")
+								%titlesArray <+ %temp
+								%G_hushSearchesImport->$append(%temp);
+							}
+							// %titlesArray should contain an array filled with movie titles in format: Movie Name 1234
+		debug -c "size of titlesArray: %titlesArray[]#";
+							%success = true
+						}
+					}
+				}
+				else
+				{
+					debug -c file path: %url does not exist!
+					@%lblStatusLeft->$setText("Supplied local file path does not exist.");
+					@%lblStatusRight->$setText("Please check and try again.");
+				}
+			}
 			# check if the url passed is a http or https url
-			if ($str.match("https{0,1}://.*",%url,r))
+			elseif ($str.match("https{0,1}://.*",%url,r))
 			{
 		#		debug -c the url matches the regex
 				if (%urlType)
@@ -838,9 +888,7 @@ class("hush::searchesimport","widget")
 					# fetch the content from the URL
 					http.asyncGet --auto-file-name --winctrl=h --existing-file-action=o -i=%urlType --clear (%url, $file.fixpath(%incoming\\hushSearchesImport.html))
 					{
-						%G_hushSearchesImport = $new(list)
-						%callbackSuccess = $false
-		#				debug -c \n0: $0\n1: $1\n2: $2\n3: $3\n4: $4
+						debug -c \n0: $0\n1: $1\n2: $2\n3: $3\n4: $4
 						# dev note: the following values will probably change over time as websites change their source code.
 						# if this feature breaks, its most likely these values that need altering
 						# the regexps here are used to decide if a line in the file holds a title string or a year string
@@ -877,6 +925,7 @@ class("hush::searchesimport","widget")
 										%year = $str.rightfromlast($str.chop(%f[$(%i + 1)],8),"(")
 										%G_hushSearchesImport->$append(%title %year);
 									}
+									%success = true
 								}
 							}
 							elseif (%urlType == "IMDB Calendar")
@@ -907,6 +956,7 @@ class("hush::searchesimport","widget")
 								{
 									%G_hushSearchesImport->$append(%title);
 								}
+								%success = true
 		
 							}
 		#						### end flow for external source
@@ -922,39 +972,6 @@ class("hush::searchesimport","widget")
 							if (%G_hush->%debug) {debug -c couldn't read lines from file: $2;}
 						}
 		
-		#				debug -c candidates: %G_hushSearchesImport->$count();
-						if (%G_hushSearchesImport->$count() == 0) {%zero = "Check/change source URL or Source Type and try again.";}
-		#				debug -c take a look at something in G_hushSearchesImport->\$item(int);
-						%G_hush->%searchesImport->%lblStatusLeft->$setText("%G_hushSearchesImport->$count titles retrieved.");
-						%G_hush->%searchesImport->%lblStatusRight->$setText("Only new, non-existing titles will be added to passive searches.");
-						if (%zero) {%G_hush->%searchesImport->%lblStatusRight->$setText(%zero);}
-		#				### dev note: this is where we put our found titles into the UI widget
-						if (%G_hushSearchesImport->$count() > 0)
-						{
-		#					debug -c we are adding titles to the lbResults widget;
-							%callbackSuccess = %G_hushSearchesImport->$count();
-							%G_hushSearchesImport->$sort($true);
-							%G_hushSearchesImport->$moveFirst();
-							# loop through list of titles found
-							do {
-								%G_hush->%searchesImport->%lbResults->$insertItem(%G_hushSearchesImport->$current);
-							}
-							while (%G_hushSearchesImport->$moveNext)
-						}
-		
-						if ((%G_hushOptions{"SearchImportsAutoToggle"} == $true) && (%G_hush->%searchImportsAutoFlag == $true))
-						{
-							if (%G_hush->%debug) {debug -c Search Import Automated Acquisition is on, and the fetchResults callback run will automatically try to add titles to the Searches list.;}
-							if (%G_hush->%debug) {debug -c fetchResults::callback: Number of titles found: %success;}
-							# dev-note: the following call must use absolute resolution to the function call because we can be calling this code from a callback scope
-							%G_hush->%searchesImport->$addToSearches();
-							%G_hush->%searchesImport->%lblStatusLeft->$setText("");
-							%G_hush->%searchesImport->%lblStatusRight->$setText("");
-							%G_hush->%searchesImport->%lbResults->$clear();
-						}
-		
-						return $true;
-		#				### end of UI widget insertion
 					} # end of http callback block
 					@%lblStatusLeft->$setText("Fetching titles...");
 					@%lblStatusRight->$setText("");
@@ -970,6 +987,43 @@ class("hush::searchesimport","widget")
 		#		debug -c The URL supplied '%url' does not seem to be a valid URL!
 				@%lblStatusLeft->$setText("Supplied URL seems invalid.");
 				@%lblStatusRight->$setText("Please check and try again.");
+			}
+			if (success)
+			{
+		#		debug -c candidates: %G_hushSearchesImport->$count();
+				if (%G_hushSearchesImport->$count() == 0) {%zero = "Check/change source URL or Source Type and try again.";}
+		#		debug -c take a look at something in G_hushSearchesImport->\$item(int);
+				%G_hush->%searchesImport->%lblStatusLeft->$setText("%G_hushSearchesImport->$count titles retrieved.");
+				%G_hush->%searchesImport->%lblStatusRight->$setText("Only new, non-existing titles will be added to passive searches.");
+				if (%zero) {%G_hush->%searchesImport->%lblStatusRight->$setText(%zero);}
+		#		### dev note: this is where we put our found titles into the UI widget
+				if (%G_hushSearchesImport->$count() > 0)
+				{
+		#			debug -c we are adding titles to the lbResults widget;
+					%G_hushSearchesImport->$sort($true);
+					%G_hushSearchesImport->$moveFirst();
+					# loop through list of titles found
+					do {
+						if (%G_hushSearchesImport->$current() != "")
+						{
+							%G_hush->%searchesImport->%lbResults->$insertItem(%G_hushSearchesImport->$current)
+						}
+					}
+					while (%G_hushSearchesImport->$moveNext)
+				}
+		
+				if ((%G_hushOptions{"SearchImportsAutoToggle"} == $true) && (%G_hush->%searchImportsAutoFlag == $true))
+				{
+					if (%G_hush->%debug) {debug -c Search Import Automated Acquisition is on, and the fetchResults callback run will automatically try to add titles to the Searches list.;}
+					if (%G_hush->%debug) {debug -c fetchResults::callback: Number of titles found: %success;}
+					# dev-note: the following call must use absolute resolution to the function call because we can be calling this code from a callback scope
+					%G_hush->%searchesImport->$addToSearches();
+					%G_hush->%searchesImport->%lblStatusLeft->$setText("");
+					%G_hush->%searchesImport->%lblStatusRight->$setText("");
+					%G_hush->%searchesImport->%lbResults->$clear();
+				}
+				return $true;
+		#		### end of UI widget insertion
 			}
 		}
 		else
@@ -1022,6 +1076,7 @@ class("hush::searchesimport","widget")
 		### dev note: the values of items that are inserted here are used as conditionals in searchsimport::fetchResults
 		@%coboImportURL->$insertItem("IMDB Lists")
 		@%coboImportURL->$insertItem("IMDB Calendar")
+		@%coboImportURL->$insertItem("Local File - IMDB Calendar")
 		
 		# button LAUNCH
 		@%btnLAUNCH = $new(button, $$)
@@ -1095,6 +1150,12 @@ class("hush::searchesimport","widget")
 			case("IMDB Calendar"):
 			{
 				@%leImportURL->$setText("https://imdb.com/calendar")
+				break;
+			}
+			case("Local File - IMDB Calendar"): 
+			{
+				@%leImportURL->$setText($file.fixPath("Z:\\incoming\\imdbFile.html"))
+				#@%lblStatusLeft->$setText("Check/set the URL to the path of the local file to use.");
 				break;
 			}
 			default:
@@ -2866,7 +2927,7 @@ class("hush::options","widget")
 		# populate child widgets of Searching tab
 		
 		if (%G_hushOptions{"ISEnabled"} != "") {@%chbISToggle->$setChecked(%G_hushOptions{"ISEnabled"});}
-		else {@%chbISEnabled->$setChecked($true);}
+		else {@%chbISToggle->$setChecked($true);}
 		if (%G_hushOptions{"ISPSToggle"} != "") {@%chbISPSToggle->$setChecked(%G_hushOptions{"ISPSToggle"});}
 		else {@%chbISPSToggle->$setChecked($true);}
 		if (%G_hushOptions{"ISObeySE"} != "") {@%chbISObeySE->$setChecked(%G_hushOptions{"ISObeySE"});}
@@ -2886,16 +2947,16 @@ class("hush::options","widget")
 		
 		# layout for Tab: Searching
 		@%lPageIS->$addMultiCellWidget(@%chbISToggle,					 0,0,0,1)
-		@%lPageIS->$addMultiCellWidget(@%chbISPSToggle,					 1,1,0,1)
+		@%lPageIS->$addMultiCellWidget(@%chbISPSToggle,				 1,1,0,1)
 		@%lPageIS->$addMultiCellWidget(@%chbISObeySE,					 2,2,0,1)
 		@%lPageIS->$addMultiCellWidget(@%chbSearchImportsAutoToggle,		 3,3,0,1)
 		@%lPageIS->$addMultiCellWidget(@%chbSearchImportsObeyPermRecord,	 4,4,0,1)
 		@%lPageIS->$addMultiCellWidget(@%lblSearchImportsAutoPurge,		 5,5,0,0)
-		@%lPageIS->$addMultiCellWidget(@%sbSearchImportsAutoPurge,			 5,5,1,1)
-		@%lPageIS->$addMultiCellWidget(@%lblISMaxTime,					 6,6,0,0)
+		@%lPageIS->$addMultiCellWidget(@%sbSearchImportsAutoPurge,		 5,5,1,1)
+		@%lPageIS->$addMultiCellWidget(@%lblISMaxTime,				 6,6,0,0)
 		@%lPageIS->$addMultiCellWidget(@%sbISMaxTime,					 6,6,1,1)
 		@%lPageIS->$addMultiCellWidget(@%lblISWriteSize,				 7,7,0,0)
-		@%lPageIS->$addMultiCellWidget(@%sbISWriteSize,					 7,7,1,1)
+		@%lPageIS->$addMultiCellWidget(@%sbISWriteSize,				 7,7,1,1)
 		@%lPageIS->$addMultiCellWidget(@%lblISPSFreq,					 8,8,0,0)
 		@%lPageIS->$addMultiCellWidget(@%sbISPSFreq,					 8,8,1,1)
 		@%lPageIS->$addMultiCellWidget(@%btnISPSNow,					 9,9,0,1)
@@ -2994,7 +3055,8 @@ class("hush::options","widget")
 		privateimpl($$, closeEvent)
 		{
 			# closing the settings::options window so we need to set and save all the values
-			%G_hushOptions{"extHandlers"}{Linux}					= $hash("tar", "tar -xvf", "zip", "unzip");
+			%G_hushOptions{"extHandlers"}{Linux}				= $hash("tar", "tar -xvf", "zip", "unzip");
+			%G_hushOptions{"extHandlers"}{Windows}				= $hash("tar", "tar -xvf", "zip", "unzip");
 			%G_hushOptions{"FCW"} 							= @%leFCW->$text()
 			%G_hushOptions{"ISEnabled"} 						= @%chbISToggle->$isChecked()
 			%G_hushOptions{"ISMaxTime"} 						= @%sbISMaxTime->$value()
@@ -4503,6 +4565,7 @@ class("hush::main","widget")
 		# hush::constructor
 		# creates widget objects and member values for the hush Main window, initializes a lot of things
 		
+		# this is a deliberate edit
 		
 		if (@%debug) {debug -c info: building main widget;}
 		
@@ -4852,7 +4915,7 @@ class("hush::main","widget")
 		}
 		else
 		{
-			if (@%debug) {debug -c Nope: Could not open config file for reading. Config file path: @$hushConfig;}
+			if (@%debug) {debug -c Nope: Could not open config file for reading. Config file path: %inFile;}
 			return $false
 		}
 	}
@@ -5501,7 +5564,7 @@ class("hush::libraryoptions","widget")
 		}
 		
 		// populate coboFillMethod with %G_hushOptions{MediaLibraryFillMethod}
-		@%coboFillMethod->$setCurrentItem(%G_hushOptions{MediaLibraryFillMethod})
+		//@%coboFillMethod->$setCurrentItem(%G_hushOptions{MediaLibraryFillMethod})
 		
 		#### do LAYOUT
 		
@@ -5752,7 +5815,10 @@ class("hush::library","object")
 			file.remove -q @%hushMovies
 			%G_hush->$configSave(@%hushMovies,movieTitles,@%arr_Movies)
 			# write the Movies permanent record to disk
+			
+		# dev-note: this line below is failing. the 3rd argument is null
 			%G_hush->$configSave(@%hushMoviesPermRecord,moviesPermRecord,@%moviesPermRecord)
+			debug -c 
 		}
 		else
 		{
@@ -5981,14 +6047,16 @@ class("hush::library","object")
 	
 	function constructor()
 	{
-		@%hushLibrary = $file.localdir("config/Hush/library.txt")
-		@%hushMovies  = $file.localdir("config/Hush/movies.txt")
-		@%hushTVShows = $file.localdir("config/Hush/tvshows.txt")
-		@%hushMoviesPermRecord = $file.localdir("config/Hush/moviesPermRecord.txt")
+		@%hushLibrary = $file.homedir(".config/Hush/library.txt")
+		@%hushMovies  = $file.homedir(".config/Hush/movies.txt")
+		@%hushTVShows = $file.homedir(".config/Hush/tvshows.txt")
+		@%hushMoviesPermRecord = $file.homedir(".config/Hush/moviesPermRecord.txt")
 		@%arr_Library = %G_hush->$configLoad(@%hushLibrary, library)
 		@%arr_Movies  = %G_hush->$configLoad(@%hushMovies, movieTitles)
 		@%arr_TVShows = %G_hush->$configLoad(@%hushTVShows, tvshowTitles)
-		@%moviesPermRecord  = %G_hush->$configLoad(@%hushMoviesPermRecord, moviesPermRecord)
+		@%moviesPermRecord = $array("Dummy Entry")
+		@%moviesPermRecord = %G_hush->$configLoad(@%hushMoviesPermRecord, moviesPermRecord)
+		
 		
 		# build the "found already" strings from the Movies and TVShows arrays
 		// dev-note: <, operator casts the array values over to a CSV string
